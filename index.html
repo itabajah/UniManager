@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniManager</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/utils.css">
+</head>
+<body>
+    <div class="app-layout">
+        <div class="container">
+            <header>
+            <h1>Uni Course Manager</h1>
+            <div class="header-controls">
+                <button id="theme-toggle-btn" class="icon-btn" title="Toggle Theme" onclick="toggleTheme()">
+                    <!-- Sun Icon (Default/Light) -->
+                    <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <!-- Moon Icon (Dark) - Hidden by default -->
+                    <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <button id="settings-btn" class="icon-btn" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="semester-controls">
+            <select id="semester-select">
+                <!-- Options populated by JS -->
+            </select>
+            <button id="add-semester-btn" class="btn-secondary" title="Add Semester" style="margin-left: auto;">+</button>
+            <button id="delete-semester-btn" class="btn-secondary" title="Delete Current Semester">Delete</button>
+        </div>
+
+        <div id="course-list" class="course-list">
+            <!-- Courses populated by JS -->
+        </div>
+
+        <button id="add-course-fab" class="add-course-row-btn" title="Add Course">
+            <span style="font-size: 18px;">+</span> Add Course
+        </button>
+    </div>
+
+    <div class="calendar-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 20px; font-weight: 300;">Weekly Schedule</h2>
+            <button id="toggle-calendar-btn" class="icon-btn" title="Toggle Calendar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+        </div>
+        <div id="weekly-schedule" class="weekly-schedule">
+            <!-- Grid populated by JS -->
+            <div class="schedule-placeholder">No classes scheduled.</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 30px 0 15px;">
+            <h3 style="margin: 0; font-size: 16px; text-transform: uppercase; color: var(--text-secondary);">Homework</h3>
+            <label style="font-size: 11px; color: var(--text-tertiary); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <input type="checkbox" id="show-completed-toggle"> Show Done
+            </label>
+        </div>
+        <div id="homework-sidebar-list" class="upcoming-list">
+            <!-- Homework populated by JS -->
+        </div>
+    </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+                <button class="close-btn" onclick="closeModal('settings-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Profile Section -->
+                <div style="background: var(--bg-tertiary); padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid var(--border-secondary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0; font-size: 14px; text-transform: uppercase;">Profile</h3>
+                        <button id="add-profile-btn" class="btn-secondary" style="padding: 4px 8px; font-size: 12px;">+ New</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <select id="profile-select" style="flex-grow: 1; padding: 8px;"></select>
+                        <button id="edit-profile-btn" class="btn-secondary" title="Rename" style="padding: 8px 12px;">✎</button>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border-secondary); padding-top: 15px; margin-top: 10px;">
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: bold;">Data Management</div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button id="export-data-btn" class="btn-secondary" style="flex: 1; font-size: 12px;">Export</button>
+                            <button id="import-data-btn" class="btn-secondary" style="flex: 1; font-size: 12px;">Import</button>
+                            <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                        </div>
+                        <button id="delete-profile-btn" class="btn-danger" style="width: 100%; font-size: 12px;">Delete Profile</button>
+                    </div>
+                </div>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
+
+                <h3 style="margin-bottom: 15px;">Color Theme <span id="theme-unsaved-indicator" style="color: #e74c3c; font-size: 11px; font-weight: normal; display: none;">(unsaved changes)</span></h3>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <select id="color-theme-select" style="width: 100%; padding: 8px;">
+                        <option value="colorful">Rainbow - Full color spectrum</option>
+                        <option value="single">Monochromatic - Shades of one color</option>
+                        <option value="mono">Grayscale - No colors</option>
+                    </select>
+                </div>
+                <div id="base-color-container" class="form-group" style="display: none; margin-bottom: 20px;">
+                    <label for="base-color-hue">Base Color</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="range" id="base-color-hue" min="1" max="360" value="200" style="flex: 1; cursor: pointer;">
+                        <div id="base-color-preview" style="width: 40px; height: 40px; border: 1px solid var(--border-secondary); border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div id="theme-buttons-container">
+                    <button id="reset-colors-btn" class="btn-secondary" style="width: 100%; margin-bottom: 20px; transition: all 0.3s ease;">Reset Colors</button>
+                    <div id="theme-changed-buttons" style="display: none; display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button id="apply-theme-btn" class="btn-primary" style="flex: 1; padding: 10px 20px;">Apply</button>
+                        <button id="cancel-theme-btn" class="btn-secondary" style="flex: 1; padding: 10px 20px;">Cancel</button>
+                    </div>
+                </div>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
+
+                <h3>Calendar Settings</h3>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="cal-start-hour">Start Hour (0-23)</label>
+                        <input type="number" id="cal-start-hour" min="0" max="23">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="cal-end-hour">End Hour (0-23)</label>
+                        <input type="number" id="cal-end-hour" min="0" max="23">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Visible Days</label>
+                    <div id="cal-days-container" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="0"> Sun
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="1"> Mon
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="2"> Tue
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="3"> Wed
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="4"> Thu
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="5"> Fri
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" value="6"> Sat
+                        </label>
+                    </div>
+                </div>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
+
+                <h3>Sync with Cheesefork</h3>
+                <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
+                    Paste your <b>Cheesefork iCalendar (ICS) Link</b> below to sync your schedule.
+                </p>
+
+                <div style="margin-bottom: 15px;">
+                    <a href="https://cheesefork.cf" target="_blank" class="btn-secondary" style="text-decoration: none; display: inline-block; font-size: 12px;">
+                        Open Cheesefork to get link ↗
+                    </a>
+                </div>
+
+                <input type="url" id="ics-link-input" placeholder="https://files.cheesefork.cf/.../spring-2025.ics" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-secondary); border-radius: 4px; background: var(--bg-secondary); color: var(--text-primary);">
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary);">
+                        <input type="checkbox" id="batch-sync-toggle">
+                        <span>Sync multiple semesters (Batch)</span>
+                    </label>
+                    <div id="batch-sync-options" class="hidden" style="margin-top: 10px; padding-left: 0;">
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <label style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">Start:</label>
+                                <select id="sync-start-semester" style="width: 100px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary); flex-grow: 0;">
+                                    <option value="winter">Winter</option>
+                                    <option value="spring">Spring</option>
+                                    <option value="summer">Summer</option>
+                                </select>
+                                <input type="number" id="sync-start-year" placeholder="Year" style="width: 80px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <label style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">End:</label>
+                                <select id="sync-end-semester" style="width: 100px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary); flex-grow: 0;">
+                                    <option value="winter">Winter</option>
+                                    <option value="spring">Spring</option>
+                                    <option value="summer">Summer</option>
+                                </select>
+                                <input type="number" id="sync-end-year" placeholder="Year" style="width: 80px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                            </div>
+                        </div>
+                        <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
+                            Will fetch all semesters from start to end in chronological order.
+                        </p>
+                    </div>
+                </div>
+
+                <button id="sync-ics-btn" class="btn-primary">Sync Schedule</button>
+                
+                <div id="import-status" style="margin-top: 10px; font-size: 13px;"></div>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
+
+                <h3>Technion Data</h3>
+                <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
+                    Fetch the latest course catalog from the Technion SAP Info Fetcher project to enrich your course data.
+                </p>
+                <button id="fetch-technion-data-btn" class="btn-secondary" style="width: 100%;">Fetch & Update Course Data</button>
+                <div id="technion-fetch-status" style="margin-top: 10px; font-size: 13px;"></div>
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Semester Modal -->
+    <div id="add-semester-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Semester</h2>
+                <button class="close-btn" onclick="closeModal('add-semester-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="new-semester-select">Select Semester</label>
+                    <select id="new-semester-select" style="width: 100%; padding: 12px 14px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="form-group hidden" id="custom-semester-group">
+                    <label for="new-semester-custom">Custom Name</label>
+                    <input type="text" id="new-semester-custom" placeholder="e.g., Special Term 2024">
+                </div>
+                <button id="save-semester-btn" class="btn-primary">Create Semester</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Course Modal with Tabs -->
+    <div id="course-modal" class="modal-overlay">
+        <div class="modal modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title" id="course-modal-title">Add Course</h2>
+                <button class="close-btn" onclick="closeModal('course-modal')">&times;</button>
+            </div>
+            
+            <!-- Main Tab Navigation -->
+            <div class="course-modal-tabs">
+                <button class="course-modal-tab active" data-tab="recordings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 14" fill="currentColor"><circle cx="5" cy="4" r="2.5"/><path d="M5 7c-2.5 0-4 1.2-4 3v3h8v-3c0-1.8-1.5-3-4-3z"/><rect x="12" y="2" width="10" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="5" x2="20" y2="5" stroke="currentColor" stroke-width="1"/><line x1="14" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1"/><line x1="8" y1="8" x2="13" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="4" r="1" fill="currentColor"/></svg>
+                    Recordings
+                </button>
+                <button class="course-modal-tab" data-tab="homework">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Homework
+                </button>
+                <button class="course-modal-tab" data-tab="details">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Details
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="course-id">
+                
+                <!-- Recordings Tab Panel -->
+                <div id="tab-recordings" class="course-tab-panel active">
+                    <!-- Recordings Control Panel -->
+                    <div class="recordings-control-panel">
+                        <!-- Sub-Tabs Row -->
+                        <div class="recordings-tabs-row">
+                            <div id="recordings-tabs" class="recordings-tabs">
+                                <!-- Tabs populated by JS -->
+                            </div>
+                            <button id="add-recordings-tab-btn" class="recordings-tab-add" title="Add Custom Tab">+</button>
+                        </div>
+                        
+                        <!-- Actions Row -->
+                        <div class="recordings-actions-row">
+                            <button id="fetch-videos-btn" class="recordings-action-btn primary" title="Import from YouTube/Panopto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import from YouTube/Panopto</span></button>
+                            <div class="recordings-actions-divider"></div>
+                            <button id="rename-tab-btn" class="recordings-action-btn" title="Rename Tab"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg><span>Rename</span></button>
+                            <button id="clear-tab-btn" class="recordings-action-btn" title="Clear All Videos"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg><span>Clear</span></button>
+                            <button id="delete-tab-btn" class="recordings-action-btn danger" title="Delete Tab"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Delete</span></button>
+                            <div class="recordings-actions-spacer"></div>
+                            <label class="recordings-show-watched-toggle"><input type="checkbox" id="show-watched-toggle" checked><span>Show Done</span></label>
+                        </div>
+                    </div>
+
+                    <!-- Recordings List -->
+                    <div id="recordings-list" class="recordings-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <!-- Add Recording -->
+                    <div class="recordings-add-section">
+                        <input type="text" id="new-recording-link" placeholder="Paste video link (YouTube, Panopto, etc.)..." class="recordings-add-input">
+                        <button id="add-recording-btn" class="btn-primary recordings-add-btn">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Homework Tab Panel -->
+                <div id="tab-homework" class="course-tab-panel">
+                    <div id="homework-modal-list" class="lecture-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-primary);">
+                        <input type="text" id="new-homework-name-modal" placeholder="Assignment title..." style="flex-grow: 1;">
+                        <input type="date" id="new-homework-date-modal" style="width: 130px; padding: 8px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                        <button id="add-homework-btn-modal" class="btn-secondary">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Details Tab Panel -->
+                <div id="tab-details" class="course-tab-panel">
+                    <div class="form-group">
+                        <label for="course-name">Course Name</label>
+                        <input type="text" id="course-name" placeholder="e.g., Intro to CS">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="course-number">Course Number</label>
+                            <input type="text" id="course-number" placeholder="e.g., 234111">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="course-points">Points</label>
+                            <input type="number" id="course-points" placeholder="e.g., 3.0" step="0.5" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="course-lecturer">Lecturer</label>
+                        <input type="text" id="course-lecturer" placeholder="e.g., Prof. Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="course-faculty">Faculty</label>
+                        <input type="text" id="course-faculty" placeholder="e.g., Computer Science">
+                    </div>
+                    <div class="form-group">
+                        <label for="course-location">Location</label>
+                        <input type="text" id="course-location" placeholder="e.g., Taub 3">
+                    </div>
+                    <div class="form-group">
+                        <label for="course-grade">Final Grade (Optional)</label>
+                        <input type="number" id="course-grade" placeholder="e.g., 85" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="course-syllabus">Syllabus / Description</label>
+                        <textarea id="course-syllabus" rows="3" placeholder="Course description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="course-notes">Notes</label>
+                        <textarea id="course-notes" rows="3" placeholder="Midterm dates, reminders..."></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="course-exam-a">Exam Date (Moed A)</label>
+                            <input type="date" id="course-exam-a">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="course-exam-b">Exam Date (Moed B)</label>
+                            <input type="date" id="course-exam-b">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Weekly Schedule</label>
+                        <div id="schedule-list" style="margin-bottom: 10px;"></div>
+                        <div style="display: flex; gap: 5px;">
+                            <select id="new-schedule-day" style="width: 100px;">
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5">Friday</option>
+                            </select>
+                            <input type="time" id="new-schedule-start" style="width: 90px;">
+                            <span style="align-self: center;">-</span>
+                            <input type="time" id="new-schedule-end" style="width: 90px;">
+                            <button id="add-schedule-btn" class="btn-secondary" style="padding: 8px;">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course-color-hue">Course Color</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="course-color-hue" min="0" max="180" value="0" style="flex: 1; cursor: pointer;">
+                            <div id="course-color-preview" style="width: 40px; height: 40px; border: 1px solid var(--border-secondary); border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="delete-course-btn" class="btn-danger hidden">Delete Course</button>
+                        <button id="save-course-btn" class="btn-primary">Save Course</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fetch Videos Modal (Popup from Recordings Tab) -->
+    <div id="fetch-videos-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Import Videos</h2>
+                <button class="close-btn" onclick="closeModal('fetch-videos-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Source</label>
+                    <select id="fetch-source-select">
+                        <option value="youtube">YouTube Playlist</option>
+                        <option value="panopto">Panopto Folder</option>
+                    </select>
+                </div>
+                
+                <!-- YouTube Section -->
+                <div id="fetch-youtube-section">
+                    <div class="form-group">
+                        <label for="fetch-url-input">Playlist URL</label>
+                        <input type="url" id="fetch-url-input" placeholder="https://www.youtube.com/playlist?list=...">
+                    </div>
+                </div>
+                
+                <!-- Panopto Section -->
+                <div id="fetch-panopto-section" style="display: none;">
+                    <div class="panopto-import-guide">
+                        <p><strong>Quick Import (3 steps):</strong></p>
+                        <ol>
+                            <li>Open your Panopto folder in a new tab (scroll to load all videos)</li>
+                            <li>Press <kbd>F12</kbd> → Console → paste this code and press Enter:</li>
+                        </ol>
+                        <div class="panopto-script-box">
+                            <code id="panopto-script-code">copy(JSON.stringify([...document.querySelectorAll('tr[aria-label][id]')].filter(r=>/^[a-f0-9-]{36}$/i.test(r.id)).map(r=>({t:r.getAttribute('aria-label'),u:location.origin+'/Panopto/Pages/Viewer.aspx?id='+r.id}))))</code>
+                            <button type="button" id="copy-panopto-script-btn" class="panopto-copy-btn" title="Copy script">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-tertiary); margin: 8px 0;">The data is automatically copied to your clipboard!</p>
+                        <ol start="3">
+                            <li>Paste here (<kbd>Ctrl+V</kbd>):</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="form-group">
+                        <textarea id="panopto-paste-data" class="panopto-paste-area" placeholder="Paste the copied JSON data here..."></textarea>
+                    </div>
+                    
+                    <button type="button" id="parse-panopto-data-btn" class="btn-secondary" style="width: 100%; margin-bottom: 15px;">Parse Video Data</button>
+                    
+                    <div id="panopto-extracted-list" class="panopto-extracted-list hidden"></div>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="fetch-use-original-names" style="width: auto; margin: 0;">
+                    <label for="fetch-use-original-names" style="margin: 0; text-transform: none; font-size: 14px; color: var(--text-primary);">Use original video titles</label>
+                </div>
+                
+                <div id="fetch-status" style="margin-bottom: 15px; font-size: 13px;"></div>
+                
+                <button id="fetch-videos-submit-btn" class="btn-primary">Import Videos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core modules (load order matters) -->
+    <script src="js/constants.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/video-fetch.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/course-logic.js"></script>
+    <script src="js/item-logic.js"></script>
+    <script src="js/import-export.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/main.js"></script>
+
+    <footer class="site-footer">
+        <p>Made by <a href="https://www.linkedin.com/in/ibraheem-tabajah/" target="_blank">Ibrahim Tabajah</a></p>
+        <p class="credits">Special thanks to <a href="https://github.com/michael-maltsev" target="_blank">Michael Maltsev</a> for <a href="https://github.com/michael-maltsev/cheese-fork" target="_blank">Cheesefork</a> & <a href="https://github.com/michael-maltsev/technion-sap-info-fetcher" target="_blank">Technion SAP Fetcher</a></p>
+    </footer>
+</body>
+</html>

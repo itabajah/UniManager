@@ -1,0 +1,113 @@
+/**
+ * layout.css
+ * Main layout structure: app container, sidebar, flexbox layouts
+ */
+
+/* App Layout */
+.app-layout {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1400px;
+    height: 100%;
+}
+
+.container {
+    flex: 3;
+    /* Existing styles override */
+    max-width: none;
+    width: auto;
+    margin: 0;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+    transition: color 0.3s;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* Theme Icons Logic */
+.theme-icon-sun { display: block; }
+.theme-icon-moon { display: none; }
+
+body.dark-mode .theme-icon-sun { display: none; }
+body.dark-mode .theme-icon-moon { display: block !important; }
+
+/* Semester Controls */
+.semester-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+/* Footer */
+.site-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    padding: 5px 20px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-primary);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    z-index: 100;
+}
+
+.site-footer p {
+    margin: 1px 0;
+}
+
+.site-footer .credits {
+    font-size: 9px;
+}
+
+.site-footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.site-footer a:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}

@@ -1,0 +1,82 @@
+/**
+ * utils.css
+ * Utility classes and responsive breakpoints
+ */
+
+.hidden {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        display: block;
+        padding: 20px 10px;
+    }
+
+    .app-layout {
+        flex-direction: column;
+        height: auto;
+        display: flex;
+    }
+
+    .container {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        padding-right: 0;
+        margin-bottom: 20px;
+    }
+
+    .course-list {
+        overflow: visible;
+        flex: none;
+    }
+
+    .calendar-container {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        overflow: visible;
+        position: static;
+        display: block;
+    }
+
+    .upcoming-list {
+        overflow: visible;
+        flex: none;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .weekly-schedule {
+        min-width: 600px; /* Force minimum width for readability */
+    }
+    
+    /* Make the calendar container scroll horizontally for the grid */
+    .calendar-container {
+        overflow-x: auto;
+    }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
