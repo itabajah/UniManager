@@ -64,6 +64,51 @@ h1 {
     color: var(--text-primary);
 }
 
+/* Google Sync Icon States */
+.google-sync-btn[data-state="disconnected"] {
+    color: var(--text-tertiary);
+}
+
+.google-sync-btn[data-state="disconnected"]:hover {
+    color: var(--blue, #3498db);
+}
+
+.google-sync-btn[data-state="reconnect"] {
+    color: var(--yellow, #f39c12);
+    animation: pulse-warning 2s infinite;
+}
+
+.google-sync-btn[data-state="reconnect"]:hover {
+    color: var(--orange, #e67e22);
+}
+
+.google-sync-btn[data-state="connected"] {
+    color: var(--green, #27ae60);
+}
+
+.google-sync-btn[data-state="connected"]:hover {
+    color: var(--green, #27ae60);
+    background: rgba(39, 174, 96, 0.1);
+}
+
+/* Show appropriate icon based on state */
+.google-sync-btn[data-state="disconnected"] .google-icon-disconnected { display: block; }
+.google-sync-btn[data-state="disconnected"] .google-icon-reconnect { display: none; }
+.google-sync-btn[data-state="disconnected"] .google-icon-connected { display: none; }
+
+.google-sync-btn[data-state="reconnect"] .google-icon-disconnected { display: none; }
+.google-sync-btn[data-state="reconnect"] .google-icon-reconnect { display: block; }
+.google-sync-btn[data-state="reconnect"] .google-icon-connected { display: none; }
+
+.google-sync-btn[data-state="connected"] .google-icon-disconnected { display: none; }
+.google-sync-btn[data-state="connected"] .google-icon-reconnect { display: none; }
+.google-sync-btn[data-state="connected"] .google-icon-connected { display: block; }
+
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
 /* Theme Icons Logic */
 .theme-icon-sun { display: block; }
 .theme-icon-moon { display: none; }

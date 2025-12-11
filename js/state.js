@@ -15,7 +15,8 @@
  */
 let appData = {
     semesters: [],
-    settings: { ...DEFAULT_THEME_SETTINGS }
+    settings: { ...DEFAULT_THEME_SETTINGS },
+    lastModified: new Date().toISOString()
 };
 
 /**
@@ -78,6 +79,7 @@ function migrateData(data) {
     // Ensure top-level structure
     if (!data.semesters) data.semesters = [];
     if (!data.settings) data.settings = { ...DEFAULT_THEME_SETTINGS };
+    if (!data.lastModified) data.lastModified = new Date().toISOString();
     
     // Migrate settings
     migrateSettings(data.settings);
@@ -277,6 +279,9 @@ function startTimeUpdater() {
 function saveData() {
     const profileKey = STORAGE_KEYS.DATA_PREFIX + activeProfileId;
     try {
+        // Update timestamp
+        appData.lastModified = new Date().toISOString();
+        
         localStorage.setItem(profileKey, JSON.stringify(appData));
         
         // Auto-sync to Google Drive if authenticated
@@ -296,4 +301,5 @@ function saveData() {
 
 // Export functions and data for use in other modules
 window.getActiveProfileId = getActiveProfileId;
+window.saveData = saveData;
 window.appData = appData;
