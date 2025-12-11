@@ -89,6 +89,7 @@ function gisLoaded() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: GOOGLE_CLIENT_ID,
             scope: GOOGLE_SCOPES,
+            ux_mode: 'redirect', // Use redirect instead of popup to avoid COOP issues on GitHub Pages
             callback: '', // Will be set in handleAuthClick
         });
         gisInited = true;

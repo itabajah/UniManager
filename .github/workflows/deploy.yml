@@ -22,12 +22,14 @@ jobs:
       
       - name: Create Google Config
         run: |
-          cat > js/google-config.js << EOF
+          cat > js/google-config.js << 'EOF'
           const GOOGLE_CONFIG = {
               CLIENT_ID: '${{ secrets.GOOGLE_CLIENT_ID }}',
               API_KEY: '${{ secrets.GOOGLE_API_KEY }}'
           };
           EOF
+          cat js/google-config.js
+          ls -la js/google-config.js
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
