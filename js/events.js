@@ -19,6 +19,7 @@ function setupEventListeners() {
     setupSettingsEvents();
     setupProfileEvents();
     setupColorThemeEvents();
+    setupMobileDayToggle();
 }
 
 // ============================================================================
@@ -359,6 +360,13 @@ function setupHomeworkEvents() {
 function setupSettingsEvents() {
     $('settings-btn').addEventListener('click', openSettingsModal);
     
+    // Settings Tab Switching
+    document.querySelectorAll('.settings-modal-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchSettingsTab(tab.dataset.tab);
+        });
+    });
+    
     // Calendar Settings Listeners
     $('cal-start-hour').addEventListener('change', updateCalendarSettings);
     $('cal-end-hour').addEventListener('change', updateCalendarSettings);
@@ -382,6 +390,22 @@ function setupSettingsEvents() {
 
     // Technion Data Fetch
     $('fetch-technion-data-btn').addEventListener('click', fetchTechnionData);
+}
+
+/**
+ * Switches to a specific tab in the settings modal.
+ * @param {string} tabName - Tab name ('profile', 'appearance', 'calendar', 'sync')
+ */
+function switchSettingsTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.settings-modal-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    // Update tab panels
+    document.querySelectorAll('.settings-tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `settings-tab-${tabName}`);
+    });
 }
 
 /**
@@ -723,5 +747,159 @@ function updateCalendarSettings() {
         saveData();
     }
     
+    renderCalendar();
+}
+
+// ============================================================================
+// CALENDAR EVENT NAVIGATION
+// ============================================================================
+
+/**
+ * Handles clicks on calendar event chips and navigates to the specific event.
+ * @param {string} courseId - Course ID
+ * @param {string} eventType - 'homework' or 'exam'
+ * @param {number} [homeworkIndex] - Index of homework item (for homework events)
+ * @param {string} [examType] - 'moedA' or 'moedB' (for exam events)
+ */
+function handleCalendarEventClick(courseId, eventType, homeworkIndex, examType) {
+    if (eventType === 'homework' && homeworkIndex !== undefined) {
+        // Open homework tab with specific item highlighted
+        openCourseModal(courseId, 'homework', {
+            type: 'homework',
+            index: homeworkIndex
+        });
+    } else if (eventType === 'exam' && examType) {
+        // Open details tab with exam field highlighted
+        openCourseModal(courseId, 'details', {
+            type: 'exam',
+            examType: examType
+        });
+    } else {
+        // Fallback to just opening the course
+        openCourseModal(courseId);
+    }
+}
+
+// Export for use in other modules
+window.handleCalendarEventClick = handleCalendarEventClick;
+
+// ============================================================================
+// RECORDINGS ACTIONS TOGGLE (MOBILE)
+// ============================================================================
+
+/**
+ * Toggles the recordings actions panel on mobile
+ */
+function toggleRecordingsActions() {
+    const content = document.querySelector('.recordings-control-panel-content');
+    const toggle = document.querySelector('.recordings-control-panel-toggle');
+    
+    if (!content || !toggle) return;
+    
+    const isExpanded = content.classList.toggle('expanded');
+    
+    // Rotate arrow icon
+    const svg = toggle.querySelector('svg');
+    if (svg) {
+        svg.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        svg.style.transition = 'transform 0.3s ease';
+    }
+}
+
+// Export for use in HTML onclick
+window.toggleRecordingsActions = toggleRecordingsActions;
+
+// ============================================================================
+// MOBILE DAY TOGGLE
+// ============================================================================
+
+/**
+ * Sets up mobile day view toggle (show only current day vs all days)
+ */
+function setupMobileDayToggle() {
+    const toggleBtn = $('mobile-day-toggle');
+    if (!toggleBtn) return;
+    
+    // Check if on mobile (button is visible)
+    const isMobile = window.innerWidth <= 768;
+    
+    // Check initial state from localStorage (default to true for today mode on mobile only)
+    const storedValue = localStorage.getItem('calendarShowOnlyToday');
+    const showOnlyToday = storedValue === null ? isMobile : storedValue === 'true';
+    const textSpan = toggleBtn.querySelector('span');
+    
+    // Set initial state
+    if (showOnlyToday) {
+        toggleBtn.classList.add('active');
+        if (textSpan) {
+            textSpan.textContent = 'Today';
+        }
+    } else {
+        toggleBtn.classList.remove('active');
+        if (textSpan) {
+            textSpan.textContent = 'All Days';
+        }
+    }
+    
+    toggleBtn.addEventListener('click', () => {
+        const isActive = toggleBtn.classList.toggle('active');
+        localStorage.setItem('calendarShowOnlyToday', isActive);
+        
+        // Update button text to show current state (not the action)
+        const textSpan = toggleBtn.querySelector('span');
+        if (textSpan) {
+            textSpan.textContent = isActive ? 'Today' : 'All Days';
+        }
+        
+        // Apply filter to calendar
+        applySingleDayFilter(isActive);
+    });
+    
+    // Apply initial filter (only on mobile)
+    if (isMobile) {
+        applySingleDayFilter(showOnlyToday);
+    }
+    
+    // Listen for window resize to auto-switch between mobile and desktop views
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const nowMobile = window.innerWidth <= 768;
+            const storedValue = localStorage.getItem('calendarShowOnlyToday');
+            const showOnlyToday = storedValue === null ? nowMobile : storedValue === 'true';
+            
+            if (nowMobile) {
+                // Switched to mobile - apply today mode if active
+                applySingleDayFilter(showOnlyToday);
+            } else {
+                // Switched to desktop - clear any day filter
+                applySingleDayFilter(false);
+            }
+        }, 250);
+    });
+}
+
+// Global temp variable for calendar day filter (doesn't affect settings)
+window.tempCalendarDayFilter = null;
+
+/**
+ * Filters calendar to show only current day or all days (temporary view, doesn't save)
+ */
+function applySingleDayFilter(showOnlyToday) {
+    const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const wrapper = document.querySelector('.calendar-scroll-wrapper');
+    
+    if (showOnlyToday) {
+        // Set temp filter to today only
+        window.tempCalendarDayFilter = [today];
+        if (wrapper) wrapper.classList.add('single-day-mode');
+    } else {
+        // Clear temp filter (show all days from settings)
+        window.tempCalendarDayFilter = null;
+        if (wrapper) wrapper.classList.remove('single-day-mode');
+    }
+    
+    // Re-render calendar with temp filter (renderCalendar handles week events too)
     renderCalendar();
 }

@@ -34,8 +34,10 @@
             <select id="semester-select">
                 <!-- Options populated by JS -->
             </select>
-            <button id="add-semester-btn" class="btn-secondary" title="Add Semester" style="margin-left: auto;">+</button>
-            <button id="delete-semester-btn" class="btn-secondary" title="Delete Current Semester">Delete</button>
+            <div class="semester-actions">
+                <button id="add-semester-btn" class="btn-secondary" title="Add Semester">+</button>
+                <button id="delete-semester-btn" class="btn-secondary" title="Delete Current Semester">Delete</button>
+            </div>
         </div>
 
         <div id="course-list" class="course-list">
@@ -48,15 +50,23 @@
     </div>
 
     <div class="calendar-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0; font-size: 20px; font-weight: 300;">Weekly Schedule</h2>
-            <button id="toggle-calendar-btn" class="icon-btn" title="Toggle Calendar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="mobile-day-toggle" title="Toggle Single Day View">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>All Days</span>
+                </button>
+                <button id="toggle-calendar-btn" class="icon-btn" title="Toggle Calendar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </button>
+            </div>
         </div>
-        <div id="weekly-schedule" class="weekly-schedule">
-            <!-- Grid populated by JS -->
-            <div class="schedule-placeholder">No classes scheduled.</div>
+        <div class="calendar-scroll-wrapper">
+            <div id="weekly-schedule" class="weekly-schedule">
+                <!-- Grid populated by JS -->
+                <div class="schedule-placeholder">No classes scheduled.</div>
+            </div>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 30px 0 15px;">
@@ -73,160 +83,216 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal-overlay">
-        <div class="modal">
+        <div class="modal modal-wide">
             <div class="modal-header">
                 <h2 class="modal-title">Settings</h2>
                 <button class="close-btn" onclick="closeModal('settings-modal')">&times;</button>
             </div>
+            
+            <!-- Settings Tab Navigation -->
+            <div class="settings-modal-tabs">
+                <button class="settings-modal-tab active" data-tab="profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Profile
+                </button>
+                <button class="settings-modal-tab" data-tab="appearance">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m-5.196-11.196l4.243 4.242m0 0l4.242 4.242M1 12h6m6 0h6M7.757 7.757L3.515 3.515m0 0l4.242 4.242m8.485 8.486L20.485 20.485"></path></svg>
+                    Appearance
+                </button>
+                <button class="settings-modal-tab" data-tab="calendar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Calendar
+                </button>
+                <button class="settings-modal-tab" data-tab="sync">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    Data Sync
+                </button>
+            </div>
+            
             <div class="modal-body">
-                <!-- Profile Section -->
-                <div style="background: var(--bg-tertiary); padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid var(--border-secondary);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 14px; text-transform: uppercase;">Profile</h3>
-                        <button id="add-profile-btn" class="btn-secondary" style="padding: 4px 8px; font-size: 12px;">+ New</button>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <select id="profile-select" style="flex-grow: 1; padding: 8px;"></select>
-                        <button id="edit-profile-btn" class="btn-secondary" title="Rename" style="padding: 8px 12px;">✎</button>
-                    </div>
-
-                    <div style="border-top: 1px solid var(--border-secondary); padding-top: 15px; margin-top: 10px;">
-                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: bold;">Data Management</div>
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <button id="export-data-btn" class="btn-secondary" style="flex: 1; font-size: 12px;">Export</button>
-                            <button id="import-data-btn" class="btn-secondary" style="flex: 1; font-size: 12px;">Import</button>
-                            <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                <!-- Profile Management Tab -->
+                <div id="settings-tab-profile" class="settings-tab-panel active">
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-secondary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0; font-size: 15px; font-weight: 600;">Active Profile</h3>
+                            <button id="add-profile-btn" class="btn-secondary" style="padding: 6px 12px; font-size: 13px;">+ New Profile</button>
                         </div>
-                        <button id="delete-profile-btn" class="btn-danger" style="width: 100%; font-size: 12px;">Delete Profile</button>
-                    </div>
-                </div>
-
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
-
-                <h3 style="margin-bottom: 15px;">Color Theme <span id="theme-unsaved-indicator" style="color: #e74c3c; font-size: 11px; font-weight: normal; display: none;">(unsaved changes)</span></h3>
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <select id="color-theme-select" style="width: 100%; padding: 8px;">
-                        <option value="colorful">Rainbow - Full color spectrum</option>
-                        <option value="single">Monochromatic - Shades of one color</option>
-                        <option value="mono">Grayscale - No colors</option>
-                    </select>
-                </div>
-                <div id="base-color-container" class="form-group" style="display: none; margin-bottom: 20px;">
-                    <label for="base-color-hue">Base Color</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="range" id="base-color-hue" min="1" max="360" value="200" style="flex: 1; cursor: pointer;">
-                        <div id="base-color-preview" style="width: 40px; height: 40px; border: 1px solid var(--border-secondary); border-radius: 2px;"></div>
-                    </div>
-                </div>
-                <div id="theme-buttons-container">
-                    <button id="reset-colors-btn" class="btn-secondary" style="width: 100%; margin-bottom: 20px; transition: all 0.3s ease;">Reset Colors</button>
-                    <div id="theme-changed-buttons" style="display: none; display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button id="apply-theme-btn" class="btn-primary" style="flex: 1; padding: 10px 20px;">Apply</button>
-                        <button id="cancel-theme-btn" class="btn-secondary" style="flex: 1; padding: 10px 20px;">Cancel</button>
-                    </div>
-                </div>
-
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
-
-                <h3>Calendar Settings</h3>
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="cal-start-hour">Start Hour (0-23)</label>
-                        <input type="number" id="cal-start-hour" min="0" max="23">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="cal-end-hour">End Hour (0-23)</label>
-                        <input type="number" id="cal-end-hour" min="0" max="23">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Visible Days</label>
-                    <div id="cal-days-container" style="display: flex; gap: 15px; flex-wrap: wrap;">
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="0"> Sun
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="1"> Mon
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="2"> Tue
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="3"> Wed
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="4"> Thu
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="5"> Fri
-                        </label>
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
-                            <input type="checkbox" value="6"> Sat
-                        </label>
-                    </div>
-                </div>
-
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
-
-                <h3>Sync with Cheesefork</h3>
-                <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
-                    Paste your <b>Cheesefork iCalendar (ICS) Link</b> below to sync your schedule.
-                </p>
-
-                <div style="margin-bottom: 15px;">
-                    <a href="https://cheesefork.cf" target="_blank" class="btn-secondary" style="text-decoration: none; display: inline-block; font-size: 12px;">
-                        Open Cheesefork to get link ↗
-                    </a>
-                </div>
-
-                <input type="url" id="ics-link-input" placeholder="https://files.cheesefork.cf/.../spring-2025.ics" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-secondary); border-radius: 4px; background: var(--bg-secondary); color: var(--text-primary);">
-
-                <div style="margin-bottom: 15px;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary);">
-                        <input type="checkbox" id="batch-sync-toggle">
-                        <span>Sync multiple semesters (Batch)</span>
-                    </label>
-                    <div id="batch-sync-options" class="hidden" style="margin-top: 10px; padding-left: 0;">
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <label style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">Start:</label>
-                                <select id="sync-start-semester" style="width: 100px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary); flex-grow: 0;">
-                                    <option value="winter">Winter</option>
-                                    <option value="spring">Spring</option>
-                                    <option value="summer">Summer</option>
-                                </select>
-                                <input type="number" id="sync-start-year" placeholder="Year" style="width: 80px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
-                            </div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <label style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">End:</label>
-                                <select id="sync-end-semester" style="width: 100px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary); flex-grow: 0;">
-                                    <option value="winter">Winter</option>
-                                    <option value="spring">Spring</option>
-                                    <option value="summer">Summer</option>
-                                </select>
-                                <input type="number" id="sync-end-year" placeholder="Year" style="width: 80px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
-                            </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <select id="profile-select" style="flex-grow: 1; padding: 10px; font-size: 14px;"></select>
+                            <button id="edit-profile-btn" class="btn-secondary" title="Rename Profile" style="padding: 10px 14px;">✎</button>
                         </div>
-                        <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
-                            Will fetch all semesters from start to end in chronological order.
-                        </p>
+
+                        <div id="google-account-section" style="border-top: 1px solid var(--border-secondary); padding-top: 20px; margin-top: 20px;">
+                            <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                                Google Account Sync
+                            </h4>
+                            <div id="google-connection-status" style="padding: 12px; background: var(--bg-secondary); border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
+                                <span style="color: var(--text-secondary);">Status: </span>
+                                <span id="google-status-text" style="font-weight: 500;">Not connected</span>
+                            </div>
+                            <button id="connect-google-btn" class="btn-primary" style="width: 100%;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"></polygon></svg>
+                                Connect Google Account
+                            </button>
+                            <button id="disconnect-google-btn" class="btn-secondary" style="width: 100%; display: none; margin-top: 8px;">Disconnect</button>
+                            <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 10px; line-height: 1.5;">
+                                Connect your Google account to sync your data across devices using Google Drive.
+                            </p>
+                        </div>
+
+                        <div style="border-top: 1px solid var(--border-secondary); padding-top: 20px; margin-top: 20px;">
+                            <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Local Data Management</h4>
+                            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                                <button id="export-data-btn" class="btn-secondary" style="flex: 1; font-size: 13px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    Export
+                                </button>
+                                <button id="import-data-btn" class="btn-secondary" style="flex: 1; font-size: 13px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    Import
+                                </button>
+                                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                            </div>
+                            <button id="delete-profile-btn" class="btn-danger" style="width: 100%; font-size: 13px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                Delete Profile
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <button id="sync-ics-btn" class="btn-primary">Sync Schedule</button>
-                
-                <div id="import-status" style="margin-top: 10px; font-size: 13px;"></div>
+                <!-- Appearance Tab -->
+                <div id="settings-tab-appearance" class="settings-tab-panel">
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">Color Theme 
+                        <span id="theme-unsaved-indicator" style="color: #e74c3c; font-size: 11px; font-weight: normal; display: none;">(unsaved changes)</span>
+                    </h3>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="color-theme-select">Theme Style</label>
+                        <select id="color-theme-select" style="width: 100%; padding: 10px;">
+                            <option value="colorful">Rainbow - Full color spectrum</option>
+                            <option value="single">Monochromatic - Shades of one color</option>
+                            <option value="mono">Grayscale - No colors</option>
+                        </select>
+                    </div>
+                    <div id="base-color-container" class="form-group" style="display: none; margin-bottom: 20px;">
+                        <label for="base-color-hue">Base Color</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="base-color-hue" min="1" max="360" value="200" style="flex: 1; cursor: pointer;">
+                            <div id="base-color-preview" style="width: 40px; height: 40px; border: 1px solid var(--border-secondary); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div id="theme-buttons-container">
+                        <button id="reset-colors-btn" class="btn-secondary" style="width: 100%; margin-bottom: 20px; transition: all 0.3s ease;">Reset Colors</button>
+                        <div id="theme-changed-buttons" style="display: none; gap: 10px; margin-bottom: 20px;">
+                            <button id="apply-theme-btn" class="btn-primary" style="flex: 1; padding: 10px 20px;">Apply</button>
+                            <button id="cancel-theme-btn" class="btn-secondary" style="flex: 1; padding: 10px 20px;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
 
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-primary);">
+                <!-- Calendar Settings Tab -->
+                <div id="settings-tab-calendar" class="settings-tab-panel">
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">Calendar Configuration</h3>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="cal-start-hour">Start Hour (0-23)</label>
+                            <input type="number" id="cal-start-hour" min="0" max="23">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="cal-end-hour">End Hour (0-23)</label>
+                            <input type="number" id="cal-end-hour" min="0" max="23">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Visible Days</label>
+                        <div id="cal-days-container" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="0"> Sun
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="1"> Mon
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="2"> Tue
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="3"> Wed
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="4"> Thu
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="5"> Fri
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; text-transform: none; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" value="6"> Sat
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
-                <h3>Technion Data</h3>
-                <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
-                    Fetch the latest course catalog from the Technion SAP Info Fetcher project to enrich your course data.
-                </p>
-                <button id="fetch-technion-data-btn" class="btn-secondary" style="width: 100%;">Fetch & Update Course Data</button>
-                <div id="technion-fetch-status" style="margin-top: 10px; font-size: 13px;"></div>
+                <!-- Data Sync Tab -->
+                <div id="settings-tab-sync" class="settings-tab-panel">
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">Sync with Cheesefork</h3>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
+                        Paste your <b>Cheesefork iCalendar (ICS) Link</b> below to sync your schedule.
+                    </p>
 
+                    <div style="margin-bottom: 15px;">
+                        <a href="https://cheesefork.cf" target="_blank" class="btn-secondary" style="text-decoration: none; display: inline-block; font-size: 12px;">
+                            Open Cheesefork to get link ↗
+                        </a>
+                    </div>
 
+                    <input type="url" id="ics-link-input" placeholder="https://files.cheesefork.cf/.../spring-2025.ics" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-secondary); border-radius: 4px; background: var(--bg-secondary); color: var(--text-primary);">
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary);">
+                            <input type="checkbox" id="batch-sync-toggle">
+                            <span>Sync multiple semesters (Batch)</span>
+                        </label>
+                        <div id="batch-sync-options" class="hidden" style="margin-top: 10px; padding-left: 0;">
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <label style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">Start:</label>
+                                    <select id="sync-start-semester" style="width: 100px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary); flex-grow: 0;">
+                                        <option value="winter">Winter</option>
+                                        <option value="spring">Spring</option>
+                                        <option value="summer">Summer</option>
+                                    </select>
+                                    <input type="number" id="sync-start-year" placeholder="Year" style="width: 80px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <label style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">End:</label>
+                                    <select id="sync-end-semester" style="width: 100px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary); flex-grow: 0;">
+                                        <option value="winter">Winter</option>
+                                        <option value="spring">Spring</option>
+                                        <option value="summer">Summer</option>
+                                    </select>
+                                    <input type="number" id="sync-end-year" placeholder="Year" style="width: 80px; padding: 6px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                                </div>
+                            </div>
+                            <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
+                                Will fetch all semesters from start to end in chronological order.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button id="sync-ics-btn" class="btn-primary">Sync Schedule</button>
+                    
+                    <div id="import-status" style="margin-top: 10px; font-size: 13px;"></div>
+
+                    <hr style="margin: 30px 0; border: 0; border-top: 1px solid var(--border-primary);">
+
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">Technion Data</h3>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
+                        Fetch the latest course catalog from the Technion SAP Info Fetcher project to enrich your course data.
+                    </p>
+                    <button id="fetch-technion-data-btn" class="btn-secondary" style="width: 100%;">Fetch & Update Course Data</button>
+                    <div id="technion-fetch-status" style="margin-top: 10px; font-size: 13px;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -285,7 +351,7 @@
                 <div id="tab-recordings" class="course-tab-panel active">
                     <!-- Recordings Control Panel -->
                     <div class="recordings-control-panel">
-                        <!-- Sub-Tabs Row -->
+                        <!-- Sub-Tabs Row (outside collapsible) -->
                         <div class="recordings-tabs-row">
                             <div id="recordings-tabs" class="recordings-tabs">
                                 <!-- Tabs populated by JS -->
@@ -293,8 +359,14 @@
                             <button id="add-recordings-tab-btn" class="recordings-tab-add" title="Add Custom Tab">+</button>
                         </div>
                         
+                        <button class="recordings-control-panel-toggle" onclick="toggleRecordingsActions()">
+                            <span>Recording Actions</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="recordings-control-panel-content">
                         <!-- Actions Row -->
                         <div class="recordings-actions-row">
+                            <button class="recordings-tab-add recordings-tab-add-mobile" title="Add Custom Tab" onclick="event.stopPropagation(); document.getElementById('add-recordings-tab-btn').click();">+</button>
                             <button id="fetch-videos-btn" class="recordings-action-btn primary" title="Import from YouTube/Panopto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Import from YouTube/Panopto</span></button>
                             <div class="recordings-actions-divider"></div>
                             <button id="rename-tab-btn" class="recordings-action-btn" title="Rename Tab"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg><span>Rename</span></button>
@@ -302,6 +374,7 @@
                             <button id="delete-tab-btn" class="recordings-action-btn danger" title="Delete Tab"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Delete</span></button>
                             <div class="recordings-actions-spacer"></div>
                             <label class="recordings-show-watched-toggle"><input type="checkbox" id="show-watched-toggle" checked><span>Show Done</span></label>
+                        </div>
                         </div>
                     </div>
 
@@ -487,6 +560,7 @@
     <script src="js/state.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/theme.js"></script>
+    <script src="js/google-sync.js"></script>
     <script src="js/profile.js"></script>
     <script src="js/video-fetch.js"></script>
     <script src="js/render.js"></script>

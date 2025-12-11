@@ -270,6 +270,13 @@ function saveData() {
     const profileKey = STORAGE_KEYS.DATA_PREFIX + activeProfileId;
     try {
         localStorage.setItem(profileKey, JSON.stringify(appData));
+        
+        // Auto-sync to Google Drive if authenticated
+        if (typeof autoSyncToGoogleDrive === 'function') {
+            autoSyncToGoogleDrive().catch(err => {
+                console.error('Google Drive sync failed:', err);
+            });
+        }
     } catch (error) {
         console.error('Failed to save data:', error);
         // Handle quota exceeded error

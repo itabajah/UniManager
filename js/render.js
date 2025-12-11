@@ -151,9 +151,10 @@ function createCourseCard(course, index, totalCourses) {
                 ${course.location ? `<div class="course-detail-row">Location: ${escapeHtml(course.location)}</div>` : ''}
                 ${course.notes ? `<div class="course-notes">${escapeHtml(course.notes)}</div>` : ''}
             </div>
+            ${metaParts ? `<div class="course-meta-info-mobile">${metaParts}</div>` : ''}
         </div>
         <div class="course-progress-section">
-            <div class="course-meta-right">${metaParts}</div>
+            ${metaParts ? `<div class="course-meta-right">${metaParts}</div>` : ''}
             ${progressHtml}
         </div>
     `;
@@ -352,17 +353,17 @@ function createRecordingItem(item, index, courseId, tabId, isEditing) {
                 </div>
                 ${slidesHtml ? `<div class="recording-meta">${slidesHtml}</div>` : ''}
             </div>
-            <div class="recording-actions">
-                ${externalLinkBtn}
-                <button class="recording-action-btn" 
-                    onclick="toggleRecordingEdit('${courseId}', '${tabId}', ${index})" title="Edit">
-                    Edit
-                </button>
-                <button class="recording-action-btn recording-action-btn-danger" 
-                    onclick="deleteRecording('${courseId}', '${tabId}', ${index})" title="Delete">
-                    ×
-                </button>
-            </div>
+        </div>
+        <div class="recording-actions">
+            ${externalLinkBtn}
+            <button class="recording-action-btn" 
+                onclick="toggleRecordingEdit('${courseId}', '${tabId}', ${index})" title="Edit">
+                Edit
+            </button>
+            <button class="recording-action-btn recording-action-btn-danger" 
+                onclick="deleteRecording('${courseId}', '${tabId}', ${index})" title="Delete">
+                ×
+            </button>
         </div>
         <div id="recording-preview-${index}" class="recording-preview-container hidden"></div>
         <div id="recording-edit-section-${index}" class="recording-edit-section ${isEditing ? '' : 'hidden'}">
@@ -551,7 +552,10 @@ function renderCalendar() {
 
     const semester = getCurrentSemester();
     const calendarSettings = getCalendarSettings(semester);
-    const { startHour, endHour, visibleDays } = calendarSettings;
+    const { startHour, endHour } = calendarSettings;
+    
+    // Use temp filter if active, otherwise use settings
+    const visibleDays = window.tempCalendarDayFilter || calendarSettings.visibleDays;
     const allDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     // Collect week events first to determine if we need the events row
@@ -757,6 +761,15 @@ function renderWeekEvents(grid, eventsByDay) {
             chip.className = `schedule-event-chip schedule-event-${event.type}`;
             if (event.completed) chip.classList.add('schedule-event-completed');
             
+            // Add data attributes for navigation
+            chip.dataset.courseId = event.courseId;
+            chip.dataset.eventType = event.type;
+            if (event.type === 'homework') {
+                chip.dataset.homeworkIndex = event.hwIndex;
+            } else if (event.type === 'exam') {
+                chip.dataset.examType = event.examType; // 'moedA' or 'moedB'
+            }
+            
             // Use simple text symbol for exams only
             const shortTitle = event.title.length > 12 ? event.title.substring(0, 11) + '…' : event.title;
             if (event.type === 'exam') {
@@ -774,18 +787,11 @@ function renderWeekEvents(grid, eventsByDay) {
                 chip.style.borderLeftColor = event.color;
             }
             
-            // Click handler
-            if (event.type === 'homework') {
-                chip.onclick = (e) => {
-                    e.stopPropagation();
-                    openHomeworkFromSidebar(event.courseId, event.hwIndex);
-                };
-            } else {
-                chip.onclick = (e) => {
-                    e.stopPropagation();
-                    openCourseModal(event.courseId);
-                };
-            }
+            // Click handler - navigate to specific event
+            chip.onclick = (e) => {
+                e.stopPropagation();
+                handleCalendarEventClick(event.courseId, event.type, event.hwIndex, event.examType);
+            };
             
             cell.appendChild(chip);
         });

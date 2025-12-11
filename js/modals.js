@@ -48,6 +48,8 @@ function openModal(modalId) {
     if (modal) {
         modal.classList.add('active');
         resetModalScroll(modal);
+        // Prevent body scroll on mobile
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -60,6 +62,11 @@ function closeModal(modalId) {
     if (modal) {
         modal.classList.remove('active');
         resetModalScroll(modal);
+        // Restore body scroll only if no other modals are open
+        const activeModals = document.querySelectorAll('.modal-overlay.active');
+        if (activeModals.length === 0) {
+            document.body.style.overflow = '';
+        }
     }
 }
 
@@ -71,8 +78,9 @@ function closeModal(modalId) {
  * Opens the course modal for adding or editing a course.
  * @param {string|null} courseId - Course ID to edit, or null to add new
  * @param {string} [initialTab='details'] - Which tab to show initially ('details', 'recordings', 'homework')
+ * @param {Object} [highlight=null] - Optional highlight config {type: 'homework'|'exam', index: number, examType: string}
  */
-function openCourseModal(courseId, initialTab = 'recordings') {
+function openCourseModal(courseId, initialTab = 'recordings', highlight = null) {
     editingCourseId = courseId;
     
     // Clear schedule list and temp state
@@ -103,6 +111,17 @@ function openCourseModal(courseId, initialTab = 'recordings') {
     updateCourseColorSlider();
     switchCourseModalTab(initialTab);
     openModal('course-modal');
+    
+    // Highlight specific element if requested
+    if (highlight) {
+        setTimeout(() => {
+            if (highlight.type === 'homework' && highlight.index !== undefined) {
+                highlightHomeworkItem(highlight.index);
+            } else if (highlight.type === 'exam' && highlight.examType) {
+                highlightExamField(highlight.examType);
+            }
+        }, 300);
+    }
 }
 
 /**
@@ -234,4 +253,63 @@ function openRecordingsModal(courseId) {
  */
 function openHomeworkModal(courseId) {
     openCourseModal(courseId, 'homework');
+}
+
+// ============================================================================
+// HIGHLIGHT HELPERS
+// ============================================================================
+
+/**
+ * Highlights a specific homework item in the modal.
+ * @param {number} homeworkIndex - Index of homework item to highlight
+ */
+function highlightHomeworkItem(homeworkIndex) {
+    const homeworkItems = document.querySelectorAll('.homework-item');
+    if (homeworkItems[homeworkIndex]) {
+        const item = homeworkItems[homeworkIndex];
+        item.style.transition = 'background-color 0.3s ease';
+        item.style.backgroundColor = 'var(--success-bg)';
+        item.style.borderLeft = '3px solid var(--success-border)';
+        
+        // Scroll into view
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Remove highlight after 2 seconds
+        setTimeout(() => {
+            item.style.backgroundColor = '';
+            item.style.borderLeft = '';
+        }, 2000);
+    }
+}
+
+/**
+ * Highlights a specific exam field in the details tab.
+ * @param {string} examType - 'moedA' or 'moedB'
+ */
+function highlightExamField(examType) {
+    // Switch to details tab first if not already there
+    switchCourseModalTab('details');
+    
+    setTimeout(() => {
+        const fieldId = examType === 'moedA' ? 'course-exam-a' : 'course-exam-b';
+        const field = $(fieldId);
+        
+        if (field) {
+            field.style.transition = 'all 0.3s ease';
+            field.style.backgroundColor = 'var(--error-bg)';
+            field.style.borderColor = 'var(--error-border)';
+            field.style.borderWidth = '2px';
+            
+            // Scroll into view and focus
+            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            field.focus();
+            
+            // Remove highlight after 2 seconds
+            setTimeout(() => {
+                field.style.backgroundColor = '';
+                field.style.borderColor = '';
+                field.style.borderWidth = '';
+            }, 2000);
+        }
+    }, 100);
 }

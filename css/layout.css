@@ -77,6 +77,28 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     gap: 10px;
     margin-bottom: 20px;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.semester-controls #semester-select {
+    flex: 1;
+    min-width: 0;
+}
+
+.semester-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.semester-controls #add-semester-btn,
+.semester-controls #delete-semester-btn {
+    flex-shrink: 0;
+}
+
+/* Mobile day view toggle button */
+#mobile-day-toggle {
+    display: none;
 }
 
 /* Footer */
@@ -86,20 +108,23 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     left: 0;
     right: 0;
     text-align: center;
-    padding: 5px 20px;
+    padding: 0.35rem 1.25rem;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-primary);
-    font-size: 10px;
+    font-size: 0.625rem;
     color: var(--text-tertiary);
     z-index: 100;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .site-footer p {
-    margin: 1px 0;
+    margin: 0.125rem 0;
+    line-height: 1.4;
 }
 
 .site-footer .credits {
-    font-size: 9px;
+    font-size: 0.5625rem;
 }
 
 .site-footer a {
@@ -110,4 +135,240 @@ body.dark-mode .theme-icon-moon { display: block !important; }
 .site-footer a:hover {
     color: var(--text-primary);
     text-decoration: underline;
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS
+   ======================================== */
+
+/* Large tablets and smaller (iPad, etc.) */
+@media (max-width: 900px) {
+    body {
+        padding: 20px 15px 60px 15px;
+    }
+    
+    .app-layout {
+        flex-direction: column;
+        gap: 25px;
+        height: auto;
+        max-height: none;
+    }
+    
+    .container {
+        height: auto;
+        overflow: visible;
+        padding-right: 0;
+    }
+    
+    .course-list {
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    .calendar-container {
+        width: 100%;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+    
+    .site-footer {
+        padding: 0.5rem 1rem;
+        font-size: 0.5625rem;
+    }
+    
+    .site-footer .credits {
+        font-size: 0.5rem;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    body {
+        padding: 15px 12px 70px 12px;
+    }
+    
+    h1 {
+        font-size: 22px;
+    }
+    
+    .header-controls {
+        gap: 10px;
+    }
+    
+    .icon-btn {
+        padding: 10px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .semester-controls {
+        gap: 8px;
+    }
+    
+    .semester-controls #semester-select {
+        flex: 1 1 100%;
+    }
+    
+    .semester-actions {
+        gap: 6px;
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .semester-controls #add-semester-btn,
+    .semester-controls #delete-semester-btn {
+        flex: 1;
+        padding: 10px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+    
+    /* Show mobile day toggle on tablet */
+    #mobile-day-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        font-size: 12px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-secondary);
+        border-radius: 4px;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 40px;
+    }
+    
+    #mobile-day-toggle:hover {
+        background: var(--border-primary);
+    }
+    
+    #mobile-day-toggle.active {
+        background: var(--accent);
+        color: var(--bg-secondary);
+        border-color: var(--accent);
+    }
+    
+    .site-footer {
+        padding: 0.4rem 0.75rem;
+    }
+    
+    .site-footer p {
+        font-size: 0.5rem;
+    }
+    
+    .site-footer .credits {
+        font-size: 0.45rem;
+    }
+}
+
+/* Mobile landscape & larger phones */
+@media (max-width: 640px) {
+    body {
+        padding: 12px 10px 80px 10px;
+    }
+    
+    h1 {
+        font-size: 20px;
+    }
+    
+    .app-layout {
+        gap: 20px;
+    }
+    
+    .site-footer {
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .site-footer p {
+        font-size: 0.45rem;
+        line-height: 1.3;
+    }
+    
+    .site-footer .credits {
+        font-size: 0.4rem;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    body {
+        padding: 10px 8px 90px 8px;
+    }
+    
+    h1 {
+        font-size: 18px;
+    }
+    
+    .header-controls {
+        gap: 8px;
+    }
+    
+    .app-layout {
+        gap: 15px;
+    }
+    
+    .semester-controls {
+        gap: 8px;
+    }
+    
+    .semester-actions {
+        gap: 4px;
+    }
+    
+    .semester-controls #add-semester-btn,
+    .semester-controls #delete-semester-btn {
+        padding: 10px 8px;
+        font-size: 12px;
+        min-width: 60px;
+    }
+    
+    #mobile-day-toggle {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+    
+    .site-footer {
+        padding: 0.3rem 0.4rem;
+        line-height: 1.2;
+    }
+    
+    .site-footer p {
+        font-size: 0.4rem;
+        margin: 0.1rem 0;
+    }
+    
+    .site-footer .credits {
+        font-size: 0.35rem;
+    }
+    
+    .site-footer a {
+        display: inline-block;
+        padding: 2px 0;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+    body {
+        padding: 8px 6px 100px 6px;
+    }
+    
+    h1 {
+        font-size: 16px;
+    }
+    
+    .site-footer {
+        padding: 0.25rem 0.3rem;
+    }
+    
+    .site-footer p {
+        font-size: 0.35rem;
+    }
+    
+    .site-footer .credits {
+        font-size: 0.3rem;
+    }
 }

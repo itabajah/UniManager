@@ -16,6 +16,23 @@
     flex-direction: column;
 }
 
+/* Calendar scroll wrapper - for horizontal scrolling on mobile */
+.calendar-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    margin: 0 -25px;
+    padding: 0 25px;
+}
+
+/* Full width in single day mode */
+.calendar-scroll-wrapper.single-day-mode {
+    overflow-x: hidden;
+}
+
+.calendar-scroll-wrapper.single-day-mode #weekly-schedule {
+    min-width: 100%;
+}
+
 /* Weekly Schedule Grid */
 .weekly-schedule {
     display: grid;
@@ -193,4 +210,173 @@ body.dark-mode .schedule-event-chip {
 
 body.dark-mode .schedule-event-chip:hover {
     background: var(--border-secondary);
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS FOR CALENDAR
+   ======================================== */
+
+/* Tablets and smaller */
+@media (max-width: 900px) {
+    .calendar-container {
+        min-width: 0;
+        height: auto;
+        padding: 20px;
+    }
+    
+    .calendar-scroll-wrapper {
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
+    
+    .weekly-schedule {
+        min-width: 600px;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    .calendar-container {
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .calendar-scroll-wrapper {
+        margin: 0 -15px;
+        padding: 0 15px;
+    }
+    
+    .weekly-schedule {
+        font-size: 11px;
+        gap: 1px;
+    }
+    
+    .schedule-header {
+        padding: 8px 4px;
+        font-size: 11px;
+    }
+    
+    .schedule-time-col {
+        padding: 8px 4px;
+        font-size: 10px;
+    }
+    
+    .schedule-cell {
+        min-height: 40px;
+    }
+    
+    .schedule-block {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+    
+    .schedule-event-chip {
+        padding: 4px 6px;
+        font-size: 10px;
+        min-height: 32px;
+    }
+    
+    .schedule-event-chip .event-chip-icon {
+        font-size: 10px;
+    }
+    
+    /* Homework sidebar */
+    .upcoming-list {
+        gap: 10px;
+    }
+}
+
+/* Mobile landscape & larger phones */
+@media (max-width: 640px) {
+    .calendar-container {
+        padding: 12px;
+    }
+    
+    .weekly-schedule {
+        min-width: 550px;
+    }
+    
+    .schedule-event-chip {
+        min-height: 36px;
+        padding: 6px 8px;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    .calendar-container {
+        padding: 10px;
+    }
+    
+    .calendar-scroll-wrapper {
+        margin: 0 -10px;
+        padding: 0 10px;
+    }
+    
+    /* Make calendar horizontally scrollable */
+    .weekly-schedule {
+        min-width: 500px;
+        font-size: 10px;
+    }
+    
+    .schedule-header {
+        padding: 6px 2px;
+        font-size: 10px;
+    }
+    
+    .schedule-time-col {
+        padding: 6px 2px;
+        font-size: 9px;
+    }
+    
+    .schedule-cell {
+        min-height: 35px;
+    }
+    
+    .schedule-block {
+        font-size: 9px;
+        padding: 3px 4px;
+    }
+    
+    .schedule-event-chip {
+        font-size: 9px;
+        padding: 4px 6px;
+        min-height: 32px;
+    }
+    
+    .schedule-event-chip .event-chip-icon {
+        font-size: 9px;
+    }
+    
+    /* Homework list */
+    .upcoming-homework-item {
+        padding: 10px;
+    }
+    
+    .homework-checkbox {
+        min-width: 22px;
+        min-height: 22px;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+    .calendar-container {
+        padding: 8px;
+    }
+    
+    .weekly-schedule {
+        min-width: 450px;
+        font-size: 9px;
+    }
+    
+    .schedule-header {
+        padding: 4px 2px;
+        font-size: 9px;
+    }
+    
+    .schedule-time-col {
+        padding: 4px 2px;
+        font-size: 8px;
+    }
 }

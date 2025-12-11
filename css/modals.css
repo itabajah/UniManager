@@ -115,6 +115,75 @@
 }
 
 /* ========================================
+   Settings Modal Tabs
+   ======================================== */
+.settings-modal-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 -30px 10px;
+    padding: 10px 30px 15px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.settings-modal-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-modal-tab svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.settings-modal-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-color: var(--text-tertiary);
+}
+
+.settings-modal-tab:hover svg {
+    opacity: 1;
+}
+
+.settings-modal-tab.active {
+    color: var(--bg-secondary);
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(var(--accent-rgb, 59, 130, 246), 0.3);
+}
+
+.settings-modal-tab.active svg {
+    opacity: 1;
+}
+
+/* Settings Tab Panels */
+.settings-tab-panel {
+    display: none;
+    animation: fadeIn 0.2s ease;
+    padding-top: 5px;
+}
+
+.settings-tab-panel.active {
+    display: block;
+}
+
+/* ========================================
    Course Modal Main Tabs
    ======================================== */
 .course-modal-tabs {
@@ -414,4 +483,251 @@
 .panopto-paste-area:focus {
     outline: none;
     border-color: var(--accent);
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS FOR MODALS
+   ======================================== */
+
+/* Tablets and smaller */
+@media (max-width: 900px) {
+    .modal {
+        width: 95%;
+        max-height: 85vh;
+        padding: 20px;
+    }
+    
+    .modal-header {
+        margin-left: -20px;
+        margin-right: -20px;
+        margin-top: -20px;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-top: 20px;
+        top: -20px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -20px 10px;
+        padding: 10px 20px 15px;
+        flex-wrap: wrap;
+    }
+    
+    .modal-wide {
+        max-width: 95%;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    .modal {
+        width: 98%;
+        max-height: 90vh;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .modal-header {
+        margin-left: -15px;
+        margin-right: -15px;
+        margin-top: -15px;
+        padding-left: 15px;
+        padding-right: 15px;
+        padding-top: 15px;
+        top: -15px;
+    }
+    
+    .modal-title {
+        font-size: 18px;
+    }
+    
+    .close-btn {
+        font-size: 28px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -15px 10px;
+        padding: 8px 15px 12px;
+        gap: 6px;
+    }
+    
+    .course-modal-tab,
+    .settings-modal-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+        min-height: 44px;
+    }
+    
+    .course-modal-tab svg,
+    .settings-modal-tab svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    /* Recordings tabs */
+    .recordings-tabs-row {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .recordings-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 40px;
+    }
+    
+    .recordings-tab-add {
+        min-width: 44px;
+        min-height: 40px;
+    }
+    
+    /* Form groups */
+    .form-group label {
+        font-size: 13px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    /* Modal actions */
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions button {
+        width: 100%;
+        min-height: 48px;
+    }
+}
+
+/* Mobile landscape & larger phones */
+@media (max-width: 640px) {
+    .modal {
+        width: 100%;
+        max-height: 95vh;
+        border-radius: 0;
+        padding: 12px;
+    }
+    
+    .modal-header {
+        margin-left: -12px;
+        margin-right: -12px;
+        margin-top: -12px;
+        padding: 12px;
+        top: -12px;
+    }
+    
+    .modal-title {
+        font-size: 16px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -12px 8px;
+        padding: 8px 12px 10px;
+        gap: 4px;
+    }
+    
+    .course-modal-tab,
+    .settings-modal-tab {
+        flex-direction: column;
+        padding: 8px 6px;
+        gap: 4px;
+        font-size: 10px;
+    }
+    
+    .course-modal-tab svg,
+    .settings-modal-tab svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-header {
+        margin: -10px -10px 0;
+        padding: 10px;
+        top: -10px;
+    }
+    
+    .modal-title {
+        font-size: 15px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -10px 8px;
+        padding: 6px 10px 8px;
+    }
+    
+    .course-modal-tab span,
+    .settings-modal-tab span {
+        display: none;
+    }
+    
+    .course-modal-tab,
+    .settings-modal-tab {
+        min-width: 50px;
+        justify-content: center;
+    }
+    
+    /* Recordings actions */
+    .recordings-actions-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .recordings-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .recordings-action-btn span {
+        display: inline;
+    }
+    
+    .recordings-action-btn svg {
+        margin-right: 6px;
+    }
+    
+    .recordings-show-watched-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Panopto script box */
+    .panopto-script-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .panopto-copy-btn {
+        width: 100%;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+    .modal-title {
+        font-size: 14px;
+    }
+    
+    .course-modal-tab svg,
+    .settings-modal-tab svg {
+        width: 20px;
+        height: 20px;
+    }
 }

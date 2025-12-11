@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     setupEventListeners();
     renderProfileUI();
+    
+    // Initialize Google sync
+    if (typeof initializeGoogleSync === 'function') {
+        initializeGoogleSync();
+    }
 });
 
 // ============================================================================

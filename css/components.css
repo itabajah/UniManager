@@ -143,6 +143,10 @@ select {
     margin-bottom: 2px;
 }
 
+.course-meta-info-mobile {
+    display: none;
+}
+
 .btn-action-row {
     background: transparent;
     border: 1px solid var(--border-secondary);
@@ -227,6 +231,11 @@ select {
     font-size: 12px;
     color: var(--text-secondary);
     margin-bottom: 4px;
+}
+
+.course-meta-info {
+    font-weight: 500;
+    color: var(--text-tertiary);
 }
 
 .course-notes {
@@ -1219,11 +1228,15 @@ input.hw-link-edit-url-input {
 
 /* Recording Item */
 .recording-item {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     border-radius: 10px;
     padding: 14px 16px;
     transition: all 0.2s ease;
+    gap: 10px;
 }
 
 .recording-item:hover {
@@ -1250,6 +1263,8 @@ input.hw-link-edit-url-input {
     display: flex;
     align-items: flex-start;
     gap: 10px;
+    flex: 1;
+    min-width: 0;
 }
 
 .recording-checkbox {
@@ -1258,6 +1273,7 @@ input.hw-link-edit-url-input {
     cursor: pointer;
     flex-shrink: 0;
     margin-top: 2px;
+    margin-right: 8px;
     accent-color: var(--accent);
     border-radius: 4px;
 }
@@ -1358,6 +1374,7 @@ input.hw-link-edit-url-input {
     display: flex;
     gap: 4px;
     flex-shrink: 0;
+    align-items: flex-start;
 }
 
 .recording-action-btn {
@@ -1610,4 +1627,597 @@ input.hw-link-edit-url-input {
     height: 400px;
     border: none;
     display: block;
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS
+   ======================================== */
+
+/* Tablets and smaller */
+@media (max-width: 900px) {
+    .course-card {
+        padding: 15px;
+        gap: 12px;
+    }
+    
+    .btn-action-row {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 12px;
+    }
+    
+    .add-course-row-btn {
+        padding: 14px;
+        font-size: 15px;
+        min-height: 50px;
+    }
+}
+
+/* Desktop - hide recordings control panel toggle and always show content */
+@media (min-width: 769px) {
+    .recordings-control-panel-toggle {
+        display: none !important;
+    }
+    
+    .recordings-control-panel-content {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    
+    /* Show desktop add tab button, hide mobile version */
+    #add-recordings-tab-btn {
+        display: flex !important;
+    }
+    
+    .recordings-tab-add-mobile {
+        display: none !important;
+    }
+    
+    /* Desktop recording layout - header and actions on same row, preview below */
+    .recording-item {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .recording-header {
+        flex: 1;
+        order: 0 !important;
+        min-width: 0;
+    }
+    
+    .recording-actions {
+        order: 0 !important;
+        width: auto !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        border-top: none !important;
+    }
+    
+    .recording-meta {
+        order: 0 !important;
+    }
+    
+    /* Video preview and edit section take full width below on desktop */
+    .recording-preview-container {
+        order: 10 !important;
+        width: 100% !important;
+        flex-basis: 100% !important;
+    }
+    
+    .recording-edit-section {
+        order: 11 !important;
+        width: 100% !important;
+        flex-basis: 100% !important;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    /* Mobile-optimized course card design */
+    .course-card {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 8px;
+    }
+    
+    /* Card header with reorder buttons and stats */
+    .course-reorder-buttons {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        flex-direction: row;
+        gap: 4px;
+        margin: 0;
+        opacity: 1;
+        align-items: flex-end;
+    }
+    
+    .reorder-btn {
+        padding: 3px 6px;
+        font-size: 10px;
+        min-width: 28px;
+        min-height: 28px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-secondary);
+    }
+    
+    /* Course left column - full width on mobile */
+    .course-left-col {
+        padding-right: 0;
+    }
+    
+    /* Course title larger on mobile */
+    .course-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    /* Course meta info - show mobile version, hide desktop version */
+    .course-meta-info-mobile {
+        display: block;
+        font-size: 11px;
+        color: var(--text-tertiary);
+        font-weight: 500;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-primary);
+    }
+    
+    .course-meta-right {
+        display: none;
+    }
+    
+    /* Progress section - positioned under reorder buttons on mobile */
+    .course-progress-section {
+        position: absolute;
+        top: 46px;
+        right: 8px;
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-end;
+        min-width: auto;
+    }
+    
+    .course-progress-row {
+        width: auto;
+    }
+    
+    .progress-text {
+        font-size: 10px;
+        gap: 4px;
+    }
+    
+    /* Action buttons - full width on mobile */
+    .btn-action-row {
+        width: 100%;
+        padding: 12px;
+        font-size: 13px;
+    }
+    
+    select {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    .btn-secondary,
+    .btn-primary,
+    .btn-danger {
+        padding: 12px 18px;
+        font-size: 15px;
+        min-height: 44px;
+    }
+    
+    .icon-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* Form elements */
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+        font-size: 16px;
+        padding: 12px;
+        min-height: 44px;
+    }
+    
+    textarea {
+        min-height: 80px;
+    }
+    
+    /* Recordings tabs - better mobile layout */
+    .recordings-tabs-row {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+        margin-bottom: 16px;
+    }
+    
+    .recordings-tabs {
+        justify-content: flex-start;
+        gap: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+    
+    .recordings-tab {
+        font-size: 13px;
+        padding: 10px 14px;
+        flex: 0 0 auto;
+        border-radius: 8px;
+    }
+    
+    .recordings-tab-count {
+        font-size: 10px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        margin-left: 6px;
+    }
+    
+    .recordings-tab-add {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        margin-left: 4px;
+    }
+    
+    /* Recording items - card-based mobile design */
+    .recordings-list {
+        max-height: 400px;
+        gap: 12px;
+    }
+    
+    .recording-item {
+        display: flex;
+        flex-direction: column;
+        padding: 14px;
+        border-radius: 12px;
+        background: var(--bg-primary);
+        border: 1.5px solid var(--border-primary);
+    }
+    
+    .recording-item:hover {
+        transform: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    
+    .recording-header {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: flex-start;
+        width: 100%;
+        order: 1;
+    }
+    
+    .recording-checkbox {
+        width: 22px;
+        height: 22px;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+    
+    .recording-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .recording-content-clickable {
+        padding: 8px 0;
+        margin: 0;
+        width: 100%;
+    }
+    
+    .recording-play-icon {
+        width: 28px;
+        height: 28px;
+        margin-right: 10px;
+        padding: 6px;
+    }
+    
+    .recording-name {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    /* Video preview container below name on mobile */
+    .recording-preview-container {
+        order: 3;
+        margin-top: 10px;
+        width: 100%;
+    }
+    
+    .recording-preview-container.hidden {
+        display: none;
+    }
+    
+    .recording-meta {
+        margin-top: 10px;
+        gap: 6px;
+        order: 2;
+        width: 100%;
+    }
+    
+    .recording-link {
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 8px;
+    }
+    
+    .recording-actions {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-primary);
+        order: 4;
+    }
+    
+    .recording-edit-section {
+        order: 5;
+    }
+    
+    .recording-action-btn {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 40px;
+        justify-content: center;
+    }
+    
+    .recording-action-btn-danger {
+        font-size: 18px;
+        padding: 6px 10px;
+        min-height: 36px;
+        min-width: 36px;
+    }
+    
+    /* Recording edit section mobile */
+    .recording-edit-section {
+        padding: 12px;
+        margin-top: 10px;
+    }
+    
+    .recording-edit-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+    
+    .recording-edit-label {
+        width: 100%;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+    
+    .recording-edit-input {
+        width: 100%;
+        font-size: 14px;
+        padding: 10px;
+    }
+    
+    /* Recordings control panel - collapsible on mobile */
+    .recordings-control-panel {
+        position: relative;
+    }
+    
+    .recordings-control-panel-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 12px;
+        background: var(--bg-tertiary);
+        border: none;
+        border-radius: 8px;
+        margin-top: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .recordings-control-panel-toggle:hover {
+        background: var(--border-primary);
+    }
+    
+    .recordings-control-panel-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .recordings-control-panel-content.expanded {
+        max-height: 1000px;
+    }
+    
+    /* Hide desktop add tab button on mobile, show mobile version in actions */
+    #add-recordings-tab-btn {
+        display: none !important;
+    }
+    
+    .recordings-tab-add-mobile {
+        display: flex !important;
+    }
+    
+    /* Main recordings actions bar - full width buttons on mobile */
+    .recordings-actions-row {
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
+        background: transparent;
+        align-items: stretch;
+    }
+    
+    .recordings-actions-row .recordings-action-btn {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 13px;
+        justify-content: center;
+        min-height: 44px;
+    }
+    
+    /* Hide dividers on mobile */
+    .recordings-actions-divider {
+        display: none;
+    }
+    
+    /* Show add tab button in actions bar on mobile */
+    .recordings-actions-row .recordings-tab-add {
+        display: flex;
+        width: 100%;
+        height: 44px;
+        border-radius: 8px;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        border: 1px dashed var(--border-secondary);
+        background: transparent;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .recordings-actions-row .recordings-tab-add:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--text-secondary);
+        color: var(--text-primary);
+    }
+    
+    /* Show watched toggle */
+    .recordings-show-watched-toggle {
+        padding: 10px 16px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .recordings-actions-spacer {
+        display: none;
+    }
+    
+    /* Empty state */
+    .recordings-empty {
+        padding: 40px 16px;
+        font-size: 13px;
+    }
+    
+    /* Homework items */
+    .homework-item {
+        padding: 14px;
+    }
+    
+    .homework-checkbox {
+        min-width: 22px;
+        min-height: 22px;
+    }
+    
+    .homework-item-actions button {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 8px;
+    }
+}
+
+/* Mobile landscape & larger phones */
+@media (max-width: 640px) {
+    .course-card {
+        padding: 12px;
+    }
+    
+    .course-title {
+        font-size: 16px;
+    }
+    
+    .course-number {
+        font-size: 12px;
+    }
+    
+    .progress-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    .progress-bar {
+        width: 100%;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    .course-card {
+        padding: 12px;
+    }
+    
+    .course-title {
+        font-size: 16px;
+    }
+    
+    .add-course-row-btn {
+        font-size: 14px;
+    }
+    
+    /* Recordings control panel */
+    .recordings-control-panel {
+        gap: 10px;
+    }
+    
+    .recordings-actions-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .recordings-action-btn {
+        flex: 1 1 auto;
+        min-width: 120px;
+        padding: 10px 12px;
+    }
+    
+    .recordings-action-btn span {
+        display: none;
+    }
+    
+    .recordings-action-btn svg {
+        margin-right: 0;
+    }
+    
+    /* Recording preview */
+    .recording-preview-iframe {
+        height: 250px;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+    .course-card {
+        padding: 8px;
+    }
+    
+    .btn-secondary,
+    .btn-primary,
+    .btn-danger {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+    
+    .reorder-btn {
+        padding: 6px 10px;
+    }
 }
