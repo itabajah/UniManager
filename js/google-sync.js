@@ -1,6 +1,7 @@
 /**
  * @fileoverview Google Drive synchronization for the Uni Course Manager application.
  * Handles OAuth authentication and data sync with Google Drive.
+ * @version 1.0.1
  */
 
 'use strict';
@@ -9,10 +10,10 @@
 // GOOGLE API CONFIGURATION
 // ============================================================================
 
-// NOTE: You'll need to create a Google Cloud project and get a Client ID
-// Visit: https://console.cloud.google.com/apis/credentials
-const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
-const GOOGLE_API_KEY = 'YOUR_API_KEY_HERE';
+// Configuration is loaded from google-config.js (not committed to git)
+// See google-config.example.js for setup instructions
+const GOOGLE_CLIENT_ID = typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.CLIENT_ID : 'YOUR_CLIENT_ID_HERE';
+const GOOGLE_API_KEY = typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.API_KEY : 'YOUR_API_KEY_HERE';
 const GOOGLE_DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 
@@ -49,6 +50,16 @@ async function initializeGapiClient() {
         maybeEnableGoogleButtons();
     } catch (error) {
         console.error('Error initializing Google API client:', error);
+        // Update UI to show error
+        const statusText = $('google-status-text');
+        if (statusText) {
+            statusText.textContent = 'Setup Required';
+            statusText.style.color = 'var(--error-border, #e74c3c)';
+        }
+        const statusContainer = $('google-connection-status');
+        if (statusContainer) {
+            statusContainer.innerHTML = '<div style="color: var(--error-border, #e74c3c); font-size: 12px;"><strong>⚠️ Google API Error</strong><br>Please add valid Google Cloud credentials in google-sync.js (lines 14-15)</div>';
+        }
     }
 }
 
@@ -58,15 +69,29 @@ async function initializeGapiClient() {
 function gisLoaded() {
     if (typeof google === 'undefined' || !google.accounts) {
         console.error('Google Identity Services failed to load');
+        const statusText = $('google-status-text');
+        if (statusText) {
+            statusText.textContent = 'Setup Required';
+            statusText.style.color = 'var(--error-border, #e74c3c)';
+        }
         return;
     }
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: GOOGLE_SCOPES,
-        callback: '', // Will be set in handleAuthClick
-    });
-    gisInited = true;
-    maybeEnableGoogleButtons();
+    try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: GOOGLE_SCOPES,
+            callback: '', // Will be set in handleAuthClick
+        });
+        gisInited = true;
+        maybeEnableGoogleButtons();
+    } catch (error) {
+        console.error('Error initializing Google Identity Services:', error);
+        const statusText = $('google-status-text');
+        if (statusText) {
+            statusText.textContent = 'Setup Required';
+            statusText.style.color = 'var(--error-border, #e74c3c)';
+        }
+    }
 }
 
 /**
@@ -89,8 +114,10 @@ function maybeEnableGoogleButtons() {
 /**
  * Check if user is currently authenticated with Google.
  * @returns {boolean} True if authenticated
+ * NOTE: Always check if gapi is loaded before using it
  */
 function isGoogleAuthenticated() {
+    // Safety check: Ensure Google API is loaded
     if (typeof gapi === 'undefined' || !gapi.client) {
         return false;
     }
@@ -116,10 +143,13 @@ function handleAuthClick() {
         
         // Store authentication state
         localStorage.setItem('google_authenticated', 'true');
-        updateGoogleConnectionStatus();
         
         // Initial sync after connection
         await syncToGoogleDrive();
+        
+        // Update UI after sync completes
+        updateGoogleConnectionStatus();
+        
         alert('Successfully connected to Google Drive! Your data will now sync automatically.');
     };
 
@@ -169,6 +199,7 @@ function updateGoogleConnectionStatus() {
     }
 
     const authenticated = isGoogleAuthenticated();
+    console.log('Update status - authenticated:', authenticated, 'token:', gapi.client.getToken());
     
     if (authenticated) {
         statusText.textContent = 'Connected ✓';
@@ -263,7 +294,9 @@ async function syncToGoogleDrive() {
 
         const folderId = await getOrCreateDriveFolder();
         const fileName = getProfileFileName(activeProfileId);
-        const profileData = loadProfileData(activeProfileId);
+        
+        // Get current profile data from appData (already loaded by loadProfileData())
+        const profileData = window.appData;
 
         if (!profileData) {
             console.error('No profile data to sync');
@@ -419,10 +452,6 @@ function initializeGoogleSync() {
     if (statusText) {
         statusText.textContent = 'Loading Google API...';
         statusText.style.color = 'var(--text-tertiary)';
-    }
-    const statusDiv = $('google-connection-status');
-    if (statusDiv) {
-        statusDiv.innerHTML = '<span style="color: var(--text-tertiary);">⏳ Loading Google API...</span>';
     }
 }
 

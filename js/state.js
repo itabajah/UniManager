@@ -37,6 +37,14 @@ let profiles = [];
 let activeProfileId = 'default';
 
 /**
+ * Gets the currently active profile ID.
+ * @returns {string} The active profile ID
+ */
+function getActiveProfileId() {
+    return activeProfileId;
+}
+
+/**
  * Interval ID for the current time line update.
  * @type {number|null}
  */
@@ -285,3 +293,7 @@ function saveData() {
         }
     }
 }
+
+// Export functions and data for use in other modules
+window.getActiveProfileId = getActiveProfileId;
+window.appData = appData;
