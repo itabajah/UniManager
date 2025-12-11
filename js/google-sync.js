@@ -56,6 +56,10 @@ async function initializeGapiClient() {
  * Initialize Google Identity Services.
  */
 function gisLoaded() {
+    if (typeof google === 'undefined' || !google.accounts) {
+        console.error('Google Identity Services failed to load');
+        return;
+    }
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: GOOGLE_SCOPES,
@@ -87,6 +91,9 @@ function maybeEnableGoogleButtons() {
  * @returns {boolean} True if authenticated
  */
 function isGoogleAuthenticated() {
+    if (typeof gapi === 'undefined' || !gapi.client) {
+        return false;
+    }
     const token = gapi.client.getToken();
     return token !== null;
 }
@@ -149,6 +156,17 @@ function updateGoogleConnectionStatus() {
     const statusContainer = $('google-connection-status');
     
     if (!statusText || !connectBtn || !disconnectBtn || !statusContainer) return;
+
+    // Check if Google API is loaded
+    if (!gapiInited || !gisInited) {
+        statusText.textContent = 'Loading Google API...';
+        statusText.style.color = 'var(--text-tertiary)';
+        statusContainer.style.background = 'var(--bg-tertiary)';
+        statusContainer.style.borderLeft = 'none';
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'none';
+        return;
+    }
 
     const authenticated = isGoogleAuthenticated();
     
@@ -396,8 +414,16 @@ function initializeGoogleSync() {
     gisScript.onload = gisLoaded;
     document.head.appendChild(gisScript);
 
-    // Update UI on init
-    updateGoogleConnectionStatus();
+    // Show initial loading state
+    const statusText = $('google-status-text');
+    if (statusText) {
+        statusText.textContent = 'Loading Google API...';
+        statusText.style.color = 'var(--text-tertiary)';
+    }
+    const statusDiv = $('google-connection-status');
+    if (statusDiv) {
+        statusDiv.innerHTML = '<span style="color: var(--text-tertiary);">⏳ Loading Google API...</span>';
+    }
 }
 
 // Export functions for use in other modules
