@@ -281,6 +281,7 @@ function saveData() {
     try {
         // Update timestamp
         appData.lastModified = new Date().toISOString();
+        localStorage.setItem('unimanager_last_sync', appData.lastModified);
         
         localStorage.setItem(profileKey, JSON.stringify(appData));
         

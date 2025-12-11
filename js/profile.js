@@ -43,6 +43,11 @@ function switchProfile(id) {
     loadData();
     initTheme();
     renderProfileUI();
+    
+    // Auto-sync profile change to Google Drive
+    if (typeof autoSyncToGoogleDrive === 'function') {
+        autoSyncToGoogleDrive();
+    }
 }
 
 /**

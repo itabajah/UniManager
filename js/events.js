@@ -853,6 +853,11 @@ function setupMobileDayToggle() {
         
         // Apply filter to calendar
         applySingleDayFilter(isActive);
+        
+        // Sync settings change to Google Drive
+        if (typeof syncSettingsChange === 'function') {
+            syncSettingsChange();
+        }
     });
     
     // Apply initial filter (only on mobile)

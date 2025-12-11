@@ -119,10 +119,17 @@ function maybeEnableGoogleButtons() {
         if (savedToken) {
             try {
                 const tokenData = JSON.parse(savedToken);
-                // Validate token structure
-                if (tokenData && tokenData.access_token && tokenData.expires_in) {
-                    gapi.client.setToken(tokenData);
-                    console.log('✓ Restored Google token from storage');
+                // Validate token structure and check expiration
+                if (tokenData && tokenData.access_token) {
+                    // Check if token is expired
+                    if (tokenData.expires_at && Date.now() >= tokenData.expires_at) {
+                        console.log('Saved token expired, removing');
+                        localStorage.removeItem('google_access_token');
+                        localStorage.removeItem('google_authenticated');
+                    } else {
+                        gapi.client.setToken(tokenData);
+                        console.log('✓ Restored Google token from storage');
+                    }
                 } else {
                     console.warn('Invalid token structure, removing');
                     localStorage.removeItem('google_access_token');
@@ -154,7 +161,19 @@ function isGoogleAuthenticated() {
         return false;
     }
     const token = gapi.client.getToken();
-    return token !== null;
+    if (!token || !token.access_token) {
+        return false;
+    }
+    
+    // Check if token is expired
+    if (token.expires_at && Date.now() >= token.expires_at) {
+        console.log('Token expired, clearing authentication');
+        localStorage.removeItem('google_access_token');
+        localStorage.removeItem('google_authenticated');
+        return false;
+    }
+    
+    return true;
 }
 
 /**
@@ -177,11 +196,8 @@ function autoLoginToGoogle() {
             
             console.log('✓ Silently restored Google session');
             
-            // Sync from cloud to get latest data
-            const data = await syncFromGoogleDrive();
-            if (data) {
-                console.log('✓ Data loaded from cloud after auto-login');
-            }
+            // Don't automatically sync from cloud - user didn't request it
+            // Just restore the session so sync will work when needed
             
             // Update UI
             updateGoogleConnectionStatus();
@@ -223,9 +239,13 @@ function handleAuthClick() {
                 return;
             }
             
-            // Get and save the token
+            // Get and save the token with expiration time
             const token = gapi.client.getToken();
             if (token) {
+                // Add expiration timestamp if not present
+                if (token.expires_in && !token.expires_at) {
+                    token.expires_at = Date.now() + (token.expires_in * 1000);
+                }
                 localStorage.setItem('google_access_token', JSON.stringify(token));
                 localStorage.setItem('google_authenticated', 'true');
                 console.log('✓ Saved Google token');
@@ -426,6 +446,36 @@ function getProfileFileName(profileId) {
 // ============================================================================
 
 /**
+ * Clean up old backups to prevent localStorage overflow.
+ * @param {string} profileId - Profile ID
+ * @param {number} keepCount - Number of backups to keep
+ */
+function cleanupOldBackups(profileId, keepCount = 5) {
+    try {
+        const backupPrefix = `unimanager_backup_${profileId}_`;
+        const backups = [];
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(backupPrefix)) {
+                backups.push(key);
+            }
+        }
+        
+        if (backups.length > keepCount) {
+            backups.sort().reverse();
+            const toRemove = backups.slice(keepCount);
+            toRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log('Removed old backup:', key);
+            });
+        }
+    } catch (error) {
+        console.error('Failed to cleanup old backups:', error);
+    }
+}
+
+/**
  * Create a backup of current app data in localStorage.
  * @returns {string} Backup key
  */
@@ -436,6 +486,9 @@ function createBackup() {
         return null;
     }
     try {
+        // Clean up old backups first (keep only 5 most recent)
+        cleanupOldBackups(profileId, 5);
+        
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const backupKey = `unimanager_backup_${profileId}_${timestamp}`;
         localStorage.setItem(backupKey, JSON.stringify(window.appData));
@@ -444,7 +497,9 @@ function createBackup() {
     } catch (error) {
         console.error('Failed to create backup:', error);
         if (error.name === 'QuotaExceededError') {
-            alert('Storage quota exceeded. Cannot create backup. Please clear old backups.');
+            // Try more aggressive cleanup and notify user
+            cleanupOldBackups(profileId, 2);
+            alert('Storage quota exceeded. Cleaned up old backups. Please try again.');
         }
         return null;
     }
@@ -677,13 +732,55 @@ async function syncToGoogleDrive(forceUpload = false) {
         }
 
         const folderId = await getOrCreateDriveFolder();
-        const fileName = getProfileFileName(activeProfileId);
-        const localData = window.appData;
-
-        if (!localData) {
+        const fileName = 'unimanager_complete_backup.json'; // Single file for all data
+        
+        // Get complete app state from localStorage with error handling
+        let profiles = [];
+        try {
+            profiles = JSON.parse(localStorage.getItem('unimanager_profiles') || '[]');
+            if (!Array.isArray(profiles)) {
+                console.error('Profiles is not an array, resetting to empty');
+                profiles = [];
+            }
+        } catch (error) {
+            console.error('Failed to parse profiles:', error);
+            profiles = [];
+        }
+        
+        const completeData = {
+            version: '1.0', // Sync data format version for future compatibility
+            profiles: profiles,
+            activeProfileId: localStorage.getItem('unimanager_active_profile') || 'default',
+            profileData: {}, // Will contain all profile data
+            settings: {
+                calendarShowOnlyToday: localStorage.getItem('calendarShowOnlyToday')
+            },
+            lastModified: new Date().toISOString()
+        };
+        
+        // Collect all profile data with error handling
+        profiles.forEach(profile => {
+            if (!profile || !profile.id) {
+                console.warn('Invalid profile in list, skipping');
+                return;
+            }
+            const profileKey = 'unimanager_data_' + profile.id;
+            const profileDataStr = localStorage.getItem(profileKey);
+            if (profileDataStr) {
+                try {
+                    completeData.profileData[profile.id] = JSON.parse(profileDataStr);
+                } catch (error) {
+                    console.error(`Failed to parse profile data for ${profile.id}:`, error);
+                }
+            }
+        });
+        
+        if (Object.keys(completeData.profileData).length === 0) {
             console.error('No profile data to sync');
             return false;
         }
+        
+        const localData = completeData;
 
         // Check if file exists in cloud
         const searchResponse = await gapi.client.drive.files.list({
@@ -758,12 +855,9 @@ async function syncToGoogleDrive(forceUpload = false) {
             }
         }
 
-        // Prepare data for upload
-        const syncData = {
-            profileId: activeProfileId,
-            lastSync: new Date().toISOString(),
-            data: localData,
-        };
+        // Prepare data for upload (localData is already the complete state)
+        const syncData = localData;
+        syncData.lastSync = new Date().toISOString();
 
         const fileContent = JSON.stringify(syncData, null, 2);
         const blob = new Blob([fileContent], { type: 'application/json' });
@@ -805,6 +899,8 @@ async function syncToGoogleDrive(forceUpload = false) {
         });
 
         if (uploadResponse.ok) {
+            // Update localStorage sync timestamp to match what was uploaded
+            localStorage.setItem('unimanager_last_sync', localData.lastModified);
             console.log('✓ Successfully synced to Google Drive');
             return true;
         } else {
@@ -859,9 +955,8 @@ async function syncFromGoogleDrive(profileId = null, showConflict = true) {
     }
 
     try {
-        const targetProfileId = profileId || getActiveProfileId();
         const folderId = await getOrCreateDriveFolder();
-        const fileName = getProfileFileName(targetProfileId);
+        const fileName = 'unimanager_complete_backup.json';
 
         // Search for file
         const searchResponse = await gapi.client.drive.files.list({
@@ -871,61 +966,93 @@ async function syncFromGoogleDrive(profileId = null, showConflict = true) {
         });
 
         if (!searchResponse.result.files || searchResponse.result.files.length === 0) {
-            console.log('No file found in Drive for profile:', targetProfileId);
+            console.log('No backup found in Drive');
             return null;
         }
 
         const fileId = searchResponse.result.files[0].id;
-        const syncData = await downloadFromDrive(fileId);
+        const cloudData = await downloadFromDrive(fileId);
         
-        if (!syncData || !syncData.data) {
+        if (!cloudData || !cloudData.profileData) {
             console.error('Invalid data from Drive');
             return null;
         }
-
-        const cloudData = syncData.data;
         
-        // If showing conflicts and local data exists, check for differences
-        if (showConflict && window.appData) {
-            const localTime = new Date(window.appData.lastModified || 0).getTime();
+        // If showing conflicts, check timestamps
+        if (showConflict) {
+            const localTime = new Date(localStorage.getItem('unimanager_last_sync') || 0).getTime();
             const cloudTime = new Date(cloudData.lastModified || 0).getTime();
             
             if (Math.abs(cloudTime - localTime) > 1000) {
-                const choice = await showConflictModal(window.appData, cloudData);
+                // Show simple confirmation
+                const shouldRestore = confirm(
+                    `Cloud data found from ${new Date(cloudData.lastModified).toLocaleString()}.\\n\\n` +
+                    `This will replace ALL local data including all profiles.\\n\\n` +
+                    `Click OK to restore from cloud, or Cancel to keep local data.`
+                );
                 
-                if (choice === 'cancel') {
+                if (!shouldRestore) {
+                    console.log('User chose to keep local data');
                     return null;
-                } else if (choice === 'local') {
-                    // Keep local, upload to cloud
-                    await syncToGoogleDrive(true); // Force upload
-                    return window.appData;
-                } else if (choice === 'merge') {
-                    if (!createBackup()) {
-                        console.error('Failed to create backup before merge');
-                        return null;
-                    }
-                    const merged = mergeData(window.appData, cloudData);
-                    if (!merged) {
-                        console.error('Merge failed due to data validation error');
-                        alert('Merge failed. Data may be corrupted. Please choose "Use Cloud" or "Use Local" instead.');
-                        return null;
-                    }
-                    // Save merged data and upload
-                    window.appData = merged;
-                    if (typeof saveData === 'function') {
-                        saveData();
-                    } else {
-                        console.warn('saveData function not available, data not persisted to localStorage');
-                    }
-                    await syncToGoogleDrive(true); // Upload merged result
-                    return merged;
                 }
-                // If 'cloud', return cloud data
+                
+                // Create backup before restore
+                if (!createBackup()) {
+                    console.error('Failed to create backup before restore');
+                    alert('Cannot create backup. Restore cancelled for safety.');
+                    return null;
+                }
             }
         }
         
-        console.log('✓ Loaded data from Google Drive');
-        return cloudData;
+        // Restore complete state to localStorage with validation
+        try {
+            // Validate cloud data structure
+            if (!cloudData.profiles || !Array.isArray(cloudData.profiles)) {
+                throw new Error('Invalid cloud data: profiles missing or not an array');
+            }
+            if (!cloudData.profileData || typeof cloudData.profileData !== 'object') {
+                throw new Error('Invalid cloud data: profileData missing or not an object');
+            }
+            
+            // Restore profiles
+            localStorage.setItem('unimanager_profiles', JSON.stringify(cloudData.profiles));
+            
+            // Restore active profile
+            if (cloudData.activeProfileId) {
+                localStorage.setItem('unimanager_active_profile', cloudData.activeProfileId);
+            }
+            
+            // Restore all profile data
+            Object.keys(cloudData.profileData).forEach(profileId => {
+                const profileKey = 'unimanager_data_' + profileId;
+                try {
+                    localStorage.setItem(profileKey, JSON.stringify(cloudData.profileData[profileId]));
+                } catch (error) {
+                    console.error(`Failed to restore profile ${profileId}:`, error);
+                    throw error; // Re-throw to abort the entire restore
+                }
+            });
+            
+            // Restore settings
+            if (cloudData.settings) {
+                if (cloudData.settings.calendarShowOnlyToday !== undefined) {
+                    localStorage.setItem('calendarShowOnlyToday', cloudData.settings.calendarShowOnlyToday);
+                }
+            }
+            
+            // Store last sync time
+            localStorage.setItem('unimanager_last_sync', cloudData.lastModified);
+            
+            console.log('✓ Restored complete app state from Google Drive');
+            alert('Data restored from cloud. Page will refresh.');
+            location.reload();
+            return cloudData;
+        } catch (error) {
+            console.error('Failed to restore data:', error);
+            alert('Failed to restore data from cloud. Please try again.');
+            return null;
+        }
     } catch (error) {
         console.error('Error loading from Google Drive:', error);
         return null;
@@ -947,6 +1074,22 @@ async function autoSyncToGoogleDrive() {
         console.error('Auto-sync failed:', error);
         // Don't show alert for auto-sync failures (user didn't initiate)
         return false;
+    }
+}
+
+/**
+ * Sync settings changes to Google Drive.
+ * Call this whenever user preferences change.
+ */
+function syncSettingsChange() {
+    if (typeof autoSyncToGoogleDrive === 'function') {
+        // Debounce the sync to avoid too many uploads
+        if (window.settingsSyncTimeout) {
+            clearTimeout(window.settingsSyncTimeout);
+        }
+        window.settingsSyncTimeout = setTimeout(() => {
+            autoSyncToGoogleDrive();
+        }, 2000); // Wait 2 seconds after last change
     }
 }
 
@@ -1034,4 +1177,5 @@ window.initializeGoogleSync = initializeGoogleSync;
 window.syncToGoogleDrive = syncToGoogleDrive;
 window.syncFromGoogleDrive = syncFromGoogleDrive;
 window.autoSyncToGoogleDrive = autoSyncToGoogleDrive;
+window.syncSettingsChange = syncSettingsChange;
 window.isGoogleAuthenticated = isGoogleAuthenticated;
