@@ -1,5 +1,5 @@
-# Google API credentials (keep private)
-js/google-config.js
+# Note: google-config.js is created during deployment from GitHub Secrets
+# It's never committed to the repository, so no need to ignore it
 
 # OS files
 .DS_Store
