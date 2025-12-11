@@ -22,14 +22,16 @@ jobs:
       
       - name: Create Google Config
         run: |
+          # Remove google-config.js from .gitignore temporarily
+          sed -i '/google-config.js/d' .gitignore
+          # Create the config file
           cat > js/google-config.js << 'EOF'
           const GOOGLE_CONFIG = {
               CLIENT_ID: '${{ secrets.GOOGLE_CLIENT_ID }}',
               API_KEY: '${{ secrets.GOOGLE_API_KEY }}'
           };
           EOF
-          cat js/google-config.js
-          ls -la js/google-config.js
+          echo "✓ Created google-config.js"
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -38,6 +40,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
+          retention-days: 1
       
       - name: Deploy to GitHub Pages
         id: deployment
