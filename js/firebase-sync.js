@@ -17,15 +17,12 @@
     const DB_PATH_FOR_USER = (uid) => `unimanager/users/${uid}/allProfiles`;
 
     const UI = Object.freeze({
-        headerIconId: 'cloud-sync-icon',
         statusTextId: 'cloud-status-text',
         connectBtnId: 'connect-cloud-btn',
-        disconnectBtnId: 'disconnect-cloud-btn',
-        forceSyncBtnId: 'force-sync-btn'
+        disconnectBtnId: 'disconnect-cloud-btn'
     });
 
     let initialized = false;
-    let authUnsubscribe = null;
     let dbUnsubscribe = null;
 
     let currentUser = null;
@@ -52,16 +49,17 @@
         return document.getElementById(id);
     }
 
-    function setHeaderState(state) {
-        const icon = getEl(UI.headerIconId);
-        if (!icon) return;
-        icon.dataset.state = state;
-    }
-
     function setStatus(text) {
         const el = getEl(UI.statusTextId);
-        if (!el) return;
-        el.textContent = text;
+        if (el) {
+            el.textContent = text;
+        }
+
+        // Always update header indicator text if present
+        const headerText = document.getElementById('cloud-header-text');
+        if (headerText) {
+            headerText.textContent = text;
+        }
     }
 
     function show(el, shouldShow) {
@@ -69,25 +67,30 @@
         el.style.display = shouldShow ? '' : 'none';
     }
 
+    function isMobileView() {
+        return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function formatSyncedStatus(user) {
+        if (!user) return 'Not connected';
+        if (isMobileView()) return 'Synced';
+        return user.email ? `Synced (${user.email})` : 'Synced';
+    }
+
     function updateUIForAuthState(user) {
         const connectBtn = getEl(UI.connectBtnId);
         const disconnectBtn = getEl(UI.disconnectBtnId);
-        const forceSyncBtn = getEl(UI.forceSyncBtnId);
 
         if (!user) {
-            setHeaderState('disconnected');
             setStatus('Not connected');
             show(connectBtn, true);
             show(disconnectBtn, false);
-            show(forceSyncBtn, false);
             return;
         }
 
-        setHeaderState('connected');
-        setStatus(user.email ? `Connected: ${user.email}` : 'Connected');
+        setStatus(formatSyncedStatus(user));
         show(connectBtn, false);
         show(disconnectBtn, true);
-        show(forceSyncBtn, true);
     }
 
     function safeJsonParse(str) {
@@ -383,10 +386,11 @@
                 if (typeof renderProfileUI === 'function') {
                     renderProfileUI();
                 }
+
+                setStatus(formatSyncedStatus(currentUser));
             } catch (err) {
                 console.error(LOG, 'Failed applying remote update:', err);
-                setHeaderState('reconnect');
-                setStatus('Sync error (see console)');
+                setStatus('Not synced (error)');
             } finally {
                 isApplyingRemote = false;
             }
@@ -410,7 +414,6 @@
         }
 
         try {
-            setHeaderState('connected');
             setStatus('Syncing…');
 
             const local = buildLocalPayload();
@@ -434,11 +437,10 @@
 
             await saveCloudPayload(currentUser.uid, merged);
 
-            setStatus(currentUser.email ? `Connected: ${currentUser.email}` : 'Connected');
+            setStatus(formatSyncedStatus(currentUser));
         } catch (err) {
             console.error(LOG, 'mergeThenPush failed:', err);
-            setHeaderState('reconnect');
-            setStatus('Sync error (see console)');
+            setStatus('Not synced (error)');
         }
     }
 
@@ -467,11 +469,10 @@
             setStatus('Syncing…');
             const payload = buildLocalPayload();
             await saveCloudPayload(uid, payload);
-            setStatus(currentUser.email ? `Connected: ${currentUser.email}` : 'Connected');
+            setStatus(formatSyncedStatus(currentUser));
         } catch (err) {
             console.error(LOG, 'pushLocalToCloud failed:', err);
-            setHeaderState('reconnect');
-            setStatus('Sync error (see console)');
+            setStatus('Not synced (error)');
         }
     }
 
@@ -495,34 +496,20 @@
     }
 
     function attachUIHandlers() {
-        const icon = getEl(UI.headerIconId);
         const connectBtn = getEl(UI.connectBtnId);
         const disconnectBtn = getEl(UI.disconnectBtnId);
-        const forceSyncBtn = getEl(UI.forceSyncBtnId);
 
         const connect = async () => {
             try {
                 await signIn();
             } catch (err) {
                 console.error(LOG, 'Sign-in failed:', err);
-                setHeaderState('reconnect');
                 setStatus('Sign-in failed (see console)');
             }
         };
 
-        if (icon) {
-            icon.addEventListener('click', () => {
-                if (currentUser) {
-                    // No-op: status click
-                    return;
-                }
-                connect();
-            });
-        }
-
         if (connectBtn) connectBtn.addEventListener('click', connect);
         if (disconnectBtn) disconnectBtn.addEventListener('click', () => signOut());
-        if (forceSyncBtn) forceSyncBtn.addEventListener('click', () => mergeThenPush());
     }
 
     function initializeFirebaseSync() {
@@ -536,14 +523,12 @@
 
         if (typeof FIREBASE_CONFIG === 'undefined') {
             console.error(LOG, 'FIREBASE_CONFIG not loaded. Create js/firebase-config.js from js/firebase-config.example.js');
-            setHeaderState('reconnect');
             setStatus('Missing Firebase config');
             return;
         }
 
         if (typeof firebase === 'undefined') {
             console.error(LOG, 'Firebase SDK not loaded.');
-            setHeaderState('reconnect');
             setStatus('Missing Firebase SDK');
             return;
         }
@@ -558,7 +543,13 @@
 
         attachUIHandlers();
 
-        authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+        window.addEventListener('resize', () => {
+            if (currentUser) {
+                setStatus(formatSyncedStatus(currentUser));
+            }
+        });
+
+        firebase.auth().onAuthStateChanged(async (user) => {
             currentUser = user || null;
             console.debug(LOG, 'onAuthStateChanged:', currentUser ? currentUser.uid : null);
 
