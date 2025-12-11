@@ -12,7 +12,7 @@
 /**
  * Creates a new profile.
  */
-function createProfile() {
+async function createProfile() {
     const name = prompt('Enter new profile name:', 'New Profile');
     if (!name?.trim()) return;
     
@@ -26,8 +26,29 @@ function createProfile() {
     const newId = generateId();
     profiles.push({ id: newId, name: trimmedName });
     localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
-    
+
+    // Ensure the new profile has a storage entry (helps cloud merge / lastModified).
+    try {
+        const baseData = {
+            semesters: [],
+            settings: typeof DEFAULT_THEME_SETTINGS !== 'undefined' ? { ...DEFAULT_THEME_SETTINGS } : {},
+            lastModified: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEYS.DATA_PREFIX + newId, JSON.stringify(baseData));
+    } catch (err) {
+        console.warn('[Profile] Failed initializing new profile data:', err);
+    }
+
     switchProfile(newId);
+
+    // Persist creation promptly so it appears on other devices.
+    try {
+        if (typeof forceSyncToFirebase === 'function') {
+            await forceSyncToFirebase();
+        }
+    } catch (err) {
+        console.error('[Profile] Failed to sync new profile to cloud:', err);
+    }
 }
 
 /**
@@ -53,7 +74,7 @@ function switchProfile(id) {
 /**
  * Renames the current profile.
  */
-function renameProfile() {
+async function renameProfile() {
     const profile = profiles.find(p => p.id === activeProfileId);
     if (!profile) return;
     
@@ -71,6 +92,30 @@ function renameProfile() {
     profile.name = trimmedName;
     localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
     renderProfileUI();
+
+    // Treat rename as a meaningful change: bump lastModified so the rename wins merges.
+    try {
+        if (typeof saveData === 'function') {
+            saveData();
+        } else {
+            const key = STORAGE_KEYS.DATA_PREFIX + activeProfileId;
+            const raw = localStorage.getItem(key);
+            const parsed = raw ? JSON.parse(raw) : { semesters: [], settings: {} };
+            parsed.lastModified = new Date().toISOString();
+            localStorage.setItem(key, JSON.stringify(parsed));
+        }
+    } catch (err) {
+        console.warn('[Profile] Failed bumping lastModified on rename:', err);
+    }
+
+    // Persist rename promptly so it doesn't revert after refresh / merge.
+    try {
+        if (typeof forceSyncToFirebase === 'function') {
+            await forceSyncToFirebase();
+        }
+    } catch (err) {
+        console.error('[Profile] Failed to sync rename to cloud:', err);
+    }
 }
 
 /**
@@ -159,7 +204,7 @@ function exportProfile() {
 function importProfile(file) {
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
         try {
             const importedJson = JSON.parse(e.target.result);
             
@@ -192,6 +237,15 @@ function importProfile(file) {
             switchProfile(newId);
             alert(`Imported as new profile: "${newName}"`);
             closeModal('settings-modal');
+
+            // Persist import promptly so it appears on other devices.
+            try {
+                if (typeof forceSyncToFirebase === 'function') {
+                    await forceSyncToFirebase();
+                }
+            } catch (err) {
+                console.error('[Profile] Failed to sync imported profile to cloud:', err);
+            }
 
         } catch (err) {
             alert('Error importing data: ' + err.message);
