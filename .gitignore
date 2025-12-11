@@ -1,6 +1,3 @@
-# Local-only runtime config (never commit)
-js/firebase-config.js
-
 # OS files
 .DS_Store
 Thumbs.db
@@ -15,3 +12,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Firebase runtime config (local dev only; deploy generates this from GitHub Secrets)
+js/firebase-config.js

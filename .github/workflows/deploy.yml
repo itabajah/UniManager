@@ -22,6 +22,15 @@ jobs:
       
       - name: Create Firebase Config
         run: |
+          # Secrets-only deployment: generate runtime config during deploy.
+          # If secrets are missing, fail so we don't ship a broken site.
+          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
+            echo "Missing GitHub Secret: FIREBASE_API_KEY"
+            echo "Add Firebase secrets in: Repo Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+          mkdir -p js
           cat > js/firebase-config.js << 'EOF'
           /**
            * Firebase runtime config (generated during deploy)
@@ -41,7 +50,8 @@ jobs:
             measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
           };
           EOF
-          echo "✓ Created firebase-config.js"
+          test -f js/firebase-config.js
+          echo "✓ Created js/firebase-config.js"
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
