@@ -76,7 +76,7 @@ function renameProfile() {
 /**
  * Deletes the current profile.
  */
-function deleteProfile() {
+async function deleteProfile() {
     if (!confirm('Are you sure? This will delete the CURRENT profile and all its data.')) {
         return;
     }
@@ -101,6 +101,20 @@ function deleteProfile() {
         localStorage.removeItem(STORAGE_KEYS.DATA_PREFIX + idToDelete);
     }
     
+    // If signed in, push the updated profile list to Firebase BEFORE reload.
+    // Otherwise, the cloud merge on page load can re-add the deleted profile.
+    try {
+        if (typeof forceSyncToFirebase === 'function') {
+            await forceSyncToFirebase();
+        } else if (typeof autoSyncToFirebase === 'function') {
+            // Fallback (debounced) — better than nothing.
+            autoSyncToFirebase();
+            await new Promise((r) => setTimeout(r, 900));
+        }
+    } catch (err) {
+        console.error('[Profile] Failed to sync deletion to cloud before reload:', err);
+    }
+
     location.reload();
 }
 

@@ -573,4 +573,10 @@
         console.debug(LOG, 'autoSyncToFirebase() called');
         debounceAutoSync();
     };
+
+    // Used for actions that must persist immediately (e.g., deleting a profile)
+    window.forceSyncToFirebase = async () => {
+        console.debug(LOG, 'forceSyncToFirebase() called');
+        await pushLocalToCloud();
+    };
 })();

@@ -106,7 +106,7 @@
                 </button>
                 <button class="settings-modal-tab" data-tab="sync">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                    Data Sync
+                    Fetch Data
                 </button>
             </div>
             
@@ -236,23 +236,28 @@
 
                 <!-- Data Sync Tab -->
                 <div id="settings-tab-sync" class="settings-tab-panel">
-                    <h3 style="margin-bottom: 10px; font-size: 16px;">Sync with Cheesefork</h3>
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">Fetch Data</h3>
                     <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
-                        Paste your <b>Cheesefork iCalendar (ICS) Link</b> below to sync your schedule.
+                        Import your schedule and update course info from external sources.
+                    </p>
+
+                    <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">Schedule (Cheesefork ICS)</h4>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
+                        Paste your <b>iCalendar (ICS)</b> link to import classes into the calendar.
                     </p>
 
                     <div style="margin-bottom: 15px;">
                         <a href="https://cheesefork.cf" target="_blank" class="btn-secondary" style="text-decoration: none; display: inline-block; font-size: 12px;">
-                            Open Cheesefork to get link ↗
+                            Get ICS link from Cheesefork ↗
                         </a>
                     </div>
 
-                    <input type="url" id="ics-link-input" placeholder="https://files.cheesefork.cf/.../spring-2025.ics" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-secondary); border-radius: 4px; background: var(--bg-secondary); color: var(--text-primary);">
+                    <input type="url" id="ics-link-input" placeholder="https://files.cheesefork.cf/.../term-year.ics" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-secondary); border-radius: 4px; background: var(--bg-secondary); color: var(--text-primary);">
 
                     <div style="margin-bottom: 15px;">
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary);">
                             <input type="checkbox" id="batch-sync-toggle">
-                            <span>Sync multiple semesters (Batch)</span>
+                            <span>Fetch multiple semesters (Batch)</span>
                         </label>
                         <div id="batch-sync-options" class="hidden" style="margin-top: 10px; padding-left: 0;">
                             <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -276,22 +281,22 @@
                                 </div>
                             </div>
                             <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
-                                Will fetch all semesters from start to end in chronological order.
+                                Fetches all semesters from start to end in chronological order.
                             </p>
                         </div>
                     </div>
 
-                    <button id="sync-ics-btn" class="btn-primary">Sync Schedule</button>
+                    <button id="sync-ics-btn" class="btn-primary">Fetch Schedule</button>
                     
                     <div id="import-status" style="margin-top: 10px; font-size: 13px;"></div>
 
                     <hr style="margin: 30px 0; border: 0; border-top: 1px solid var(--border-primary);">
 
-                    <h3 style="margin-bottom: 10px; font-size: 16px;">Technion Data</h3>
+                    <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">Course Catalog (Technion)</h4>
                     <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">
-                        Fetch the latest course catalog from the Technion SAP Info Fetcher project to enrich your course data.
+                        Fetch the latest course catalog to enrich course details (name, lecturer, etc.).
                     </p>
-                    <button id="fetch-technion-data-btn" class="btn-secondary" style="width: 100%;">Fetch & Update Course Data</button>
+                    <button id="fetch-technion-data-btn" class="btn-secondary" style="width: 100%;">Fetch Course Data</button>
                     <div id="technion-fetch-status" style="margin-top: 10px; font-size: 13px;"></div>
                 </div>
             </div>
