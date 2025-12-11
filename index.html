@@ -18,13 +18,17 @@
             <header>
             <h1>Uni Course Manager</h1>
             <div class="header-controls">
-                <button id="google-sync-icon" class="icon-btn google-sync-btn" title="Connect to Google Drive" data-state="disconnected">
+                <button id="cloud-sync-icon" class="icon-btn cloud-sync-btn" title="Sign in to sync" data-state="disconnected">
                     <!-- Cloud Off Icon (Disconnected) -->
-                    <svg class="google-icon-disconnected" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    <svg class="cloud-icon-disconnected" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                     <!-- Cloud Alert Icon (Needs Reconnect) -->
-                    <svg class="google-icon-reconnect" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><line x1="12" y1="13" x2="12" y2="15"></line><circle cx="12" cy="17" r="0.5"></circle></svg>
+                    <svg class="cloud-icon-reconnect" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><line x1="12" y1="13" x2="12" y2="15"></line><circle cx="12" cy="17" r="0.5"></circle></svg>
                     <!-- Cloud Check Icon (Connected) -->
-                    <svg class="google-icon-connected" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="9 13 11 15 15 11"></polyline></svg>
+                    <svg class="cloud-icon-connected" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="9 13 11 15 15 11"></polyline></svg>
+                </button>
+                <button id="force-sync-btn" class="icon-btn" title="Sync to Cloud" style="display:none;">
+                    <!-- Upload Cloud Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>
                 </button>
                 <button id="theme-toggle-btn" class="icon-btn" title="Toggle Theme" onclick="toggleTheme()">
                     <!-- Sun Icon (Default/Light) -->
@@ -131,22 +135,22 @@
                             <button id="edit-profile-btn" class="btn-secondary" title="Rename Profile" style="padding: 10px 14px;">✎</button>
                         </div>
 
-                        <div id="google-account-section" style="border-top: 1px solid var(--border-secondary); padding-top: 20px; margin-top: 20px;">
+                        <div id="cloud-account-section" style="border-top: 1px solid var(--border-secondary); padding-top: 20px; margin-top: 20px;">
                             <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                                Google Account Sync
+                                Cloud Sync (Google Sign-In)
                             </h4>
-                            <div id="google-connection-status" style="padding: 12px; background: var(--bg-secondary); border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
+                            <div id="cloud-connection-status" style="padding: 12px; background: var(--bg-secondary); border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
                                 <span style="color: var(--text-secondary);">Status: </span>
-                                <span id="google-status-text" style="font-weight: 500;">Not connected</span>
+                                <span id="cloud-status-text" style="font-weight: 500;">Not connected</span>
                             </div>
-                            <button id="connect-google-btn" class="btn-primary" style="width: 100%;">
+                            <button id="connect-cloud-btn" class="btn-primary" style="width: 100%;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"></polygon></svg>
-                                Connect Google Account
+                                Sign in with Google
                             </button>
-                            <button id="disconnect-google-btn" class="btn-secondary" style="width: 100%; display: none; margin-top: 8px;">Disconnect</button>
+                            <button id="disconnect-cloud-btn" class="btn-secondary" style="width: 100%; display: none; margin-top: 8px;">Disconnect</button>
                             <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 10px; line-height: 1.5;">
-                                Connect your Google account to sync your data across devices using Google Drive.
+                                Sign in to sync your profiles across devices using Firebase Realtime Database.
                             </p>
                         </div>
 
@@ -572,7 +576,7 @@
             
             <div class="modal-body">
                 <p style="margin-bottom: 20px; color: var(--text-secondary);">
-                    The data on Google Drive is different from your local data. How would you like to resolve this?
+                    The cloud data is different from your local data. How would you like to resolve this?
                 </p>
                 
                 <div id="conflict-details" style="background: var(--bg-tertiary); padding: 15px; border-radius: 4px; margin-bottom: 20px; font-size: 13px;">
@@ -617,9 +621,13 @@
     <script src="js/state.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/theme.js"></script>
-    <!-- Google API config (optional - will use defaults if not present) -->
-    <script src="js/google-config.js"></script>
-    <script src="js/google-sync.js"></script>
+    <!-- Firebase config (local-only) -->
+    <script src="js/firebase-config.js"></script>
+    <!-- Firebase SDK (compat, no bundler) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="js/firebase-sync.js"></script>
     <script src="js/profile.js"></script>
     <script src="js/video-fetch.js"></script>
     <script src="js/render.js"></script>

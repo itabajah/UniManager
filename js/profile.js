@@ -44,9 +44,9 @@ function switchProfile(id) {
     initTheme();
     renderProfileUI();
     
-    // Auto-sync profile change to Google Drive
-    if (typeof autoSyncToGoogleDrive === 'function') {
-        autoSyncToGoogleDrive();
+    // Auto-sync profile change to Firebase
+    if (typeof autoSyncToFirebase === 'function') {
+        autoSyncToFirebase();
     }
 }
 

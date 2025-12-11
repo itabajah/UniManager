@@ -1,5 +1,5 @@
-# Note: google-config.js is created during deployment from GitHub Secrets
-# It's never committed to the repository, so no need to ignore it
+# Local-only runtime config (never commit)
+js/firebase-config.js
 
 # OS files
 .DS_Store

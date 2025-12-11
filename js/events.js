@@ -854,9 +854,9 @@ function setupMobileDayToggle() {
         // Apply filter to calendar
         applySingleDayFilter(isActive);
         
-        // Sync settings change to Google Drive
-        if (typeof syncSettingsChange === 'function') {
-            syncSettingsChange();
+        // Sync settings change to cloud (Firebase)
+        if (typeof autoSyncToFirebase === 'function') {
+            autoSyncToFirebase();
         }
     });
     

@@ -285,10 +285,10 @@ function saveData() {
         
         localStorage.setItem(profileKey, JSON.stringify(appData));
         
-        // Auto-sync to Google Drive if authenticated
-        if (typeof autoSyncToGoogleDrive === 'function') {
-            autoSyncToGoogleDrive().catch(err => {
-                console.error('Google Drive sync failed:', err);
+        // Auto-sync to Firebase if authenticated
+        if (typeof autoSyncToFirebase === 'function') {
+            Promise.resolve(autoSyncToFirebase()).catch(err => {
+                console.error('Firebase sync failed:', err);
             });
         }
     } catch (error) {

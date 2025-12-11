@@ -20,15 +20,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Create Google Config
+      - name: Create Firebase Config
         run: |
-          cat > js/google-config.js << 'EOF'
-          const GOOGLE_CONFIG = {
-              CLIENT_ID: '${{ secrets.GOOGLE_CLIENT_ID }}',
-              API_KEY: '${{ secrets.GOOGLE_API_KEY }}'
+          cat > js/firebase-config.js << 'EOF'
+          /**
+           * Firebase runtime config (generated during deploy)
+           * This repo loads Firebase via <script> tags, so we expose FIREBASE_CONFIG globally.
+           */
+          'use strict';
+          
+          // eslint-disable-next-line no-unused-vars
+          const FIREBASE_CONFIG = {
+            apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+            authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+            databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",
+            projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+            storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+            messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+            appId: "${{ secrets.FIREBASE_APP_ID }}",
+            measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
           };
           EOF
-          echo "✓ Created google-config.js"
+          echo "✓ Created firebase-config.js"
       
       - name: Setup Pages
         uses: actions/configure-pages@v4

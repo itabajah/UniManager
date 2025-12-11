@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     setupEventListeners();
     renderProfileUI();
-    
-    // Initialize Google sync
-    if (typeof initializeGoogleSync === 'function') {
-        initializeGoogleSync();
+
+    // Initialize Firebase sync (Google Auth + RTDB)
+    if (typeof initializeFirebaseSync === 'function') {
+        initializeFirebaseSync();
     }
 });
 
