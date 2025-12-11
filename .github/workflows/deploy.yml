@@ -20,18 +20,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Create Google Config
+      - name: Prepare deployment
         run: |
-          # Remove google-config.js from .gitignore temporarily
-          sed -i '/google-config.js/d' .gitignore
-          # Create the config file
-          cat > js/google-config.js << 'EOF'
+          # Create build directory
+          mkdir -p _site
+          # Copy all files except .git and .github
+          rsync -av --exclude='.git' --exclude='.github' --exclude='_site' . _site/
+          # Create google-config.js in the build directory
+          cat > _site/js/google-config.js << 'EOF'
           const GOOGLE_CONFIG = {
               CLIENT_ID: '${{ secrets.GOOGLE_CLIENT_ID }}',
               API_KEY: '${{ secrets.GOOGLE_API_KEY }}'
           };
           EOF
-          echo "✓ Created google-config.js"
+          echo "✓ Build directory ready with google-config.js"
+          ls -la _site/js/google-config.js
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -39,8 +42,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
-          retention-days: 1
+          path: '_site'
       
       - name: Deploy to GitHub Pages
         id: deployment
