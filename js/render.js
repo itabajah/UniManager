@@ -17,6 +17,11 @@ function renderAll() {
     renderCourses();
     renderCalendar();
     renderHomeworkSidebar();
+
+    // Header ticker is implemented in js/header-ticker.js
+    if (typeof renderHeaderTicker === 'function') {
+        renderHeaderTicker();
+    }
 }
 
 /**

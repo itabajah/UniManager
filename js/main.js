@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof initializeFirebaseSync === 'function') {
         initializeFirebaseSync();
     }
+
+    // Start header ticker rotation (data is refreshed via renderAll())
+    if (typeof startHeaderTickerRotation === 'function') {
+        startHeaderTickerRotation();
+    }
 });
 
 // ============================================================================
