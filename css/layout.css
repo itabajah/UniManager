@@ -97,6 +97,11 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     flex-shrink: 0;
 }
 
+.semester-delete-icon {
+    display: none;
+    vertical-align: middle;
+}
+
 /* Mobile day view toggle button */
 #mobile-day-toggle {
     display: none;
@@ -206,24 +211,47 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     
     .semester-controls {
         gap: 8px;
+        flex-wrap: nowrap;
     }
     
     .semester-controls #semester-select {
-        flex: 1 1 100%;
+        flex: 1 1 auto;
+        min-width: 0;
     }
     
     .semester-actions {
         gap: 6px;
-        width: 100%;
-        margin-left: 0;
+        width: auto;
+        margin-left: auto;
+        flex-shrink: 0;
     }
     
     .semester-controls #add-semester-btn,
     .semester-controls #delete-semester-btn {
-        flex: 1;
+        flex: 0 0 auto;
         padding: 10px 12px;
         font-size: 13px;
         white-space: nowrap;
+    }
+
+    /* Mobile-only tweaks: widen + button, icon-only delete */
+    .semester-controls #add-semester-btn,
+    .semester-controls #delete-semester-btn {
+        width: 42px;
+        min-width: 42px;
+        padding-left: 0;
+        padding-right: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .semester-controls #delete-semester-btn .semester-delete-text {
+        display: none;
+    }
+
+    .semester-controls #delete-semester-btn .semester-delete-icon {
+        display: inline-block;
     }
     
     /* Show mobile day toggle on tablet */
@@ -313,17 +341,19 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     
     .semester-controls {
         gap: 8px;
+        flex-wrap: nowrap;
     }
     
     .semester-actions {
         gap: 4px;
+        flex-shrink: 0;
     }
     
     .semester-controls #add-semester-btn,
     .semester-controls #delete-semester-btn {
         padding: 10px 8px;
         font-size: 12px;
-        min-width: 60px;
+        min-width: 0;
     }
     
     #mobile-day-toggle {
