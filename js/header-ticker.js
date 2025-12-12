@@ -232,6 +232,26 @@ const HEADER_TICKER_TEMPLATES = {
         'Recordings backlog: 0. You\'re dangerously caught up.',
         'No unwatched recordings. This is elite behavior.',
         'Recordings are all watched. Your future self is cheering.'
+    ],
+    general: [
+        'Reminder: you don\'t need motivation. You need a timer.',
+        'If you do 15 minutes now, later-you stops yelling.',
+        'Your to-do list isn\'t scary. It\'s just loud.',
+        'Do the smallest possible version of the task. Still counts.',
+        'Open the thing. Name the thing. That\'s step one.',
+        'Tiny progress beats perfect plans.',
+        'You can be behind and still make progress today.',
+        'Today\'s strategy: fewer tabs, more output.'
+    ],
+    general_course_roast: [
+        'This course{courseMaybe} is a beautifully engineered obstacle.',
+        'Course{courseMaybe}: confidently assigns 6 hours of work like you don\'t have a life.',
+        'Course{courseMaybe} really said “time management” and meant “good luck”.',
+        'Course{courseMaybe} thinks it\'s the main character. You\'re the one doing side quests.',
+        'Course{courseMaybe} has the audacity to exist twice a week.',
+        'Course{courseMaybe} is a hobby for people who enjoy suffering (respectfully).',
+        'Course{courseMaybe}: somehow both important and impossible.',
+        'Course{courseMaybe} is teaching resilience. Not on purpose. But still.'
     ]
 };
 
@@ -244,6 +264,17 @@ let headerTickerIndex = 0;
 let headerTickerTimerId = null;
 let headerTickerActiveLane = 'a';
 let headerTickerOrder = [];
+let headerTickerItemsSignature = '';
+let headerTickerLastOrderSignature = '';
+let headerTickerMessageSeed = '';
+let headerTickerLastDisplayedKey = '';
+let headerTickerDisplayCounter = 0;
+
+// Tracks how many times a specific item key has been shown (for cycling templates).
+const headerTickerShownCountByKey = new Map();
+
+// Cache for deterministic per-day template shuffle bags.
+const headerTickerTemplateBagCache = new Map();
 
 const HEADER_TICKER_ROTATE_MS = 9000;
 
@@ -261,9 +292,23 @@ function renderHeaderTicker() {
     if (!container) return;
 
     const items = buildHeaderTickerItems();
+    const nextSignature = computeHeaderTickerItemsSignature(items);
+    const itemsChanged = nextSignature !== headerTickerItemsSignature;
+
     headerTickerItems = items;
-    rebuildHeaderTickerOrder();
-    headerTickerIndex = headerTickerOrder.length ? headerTickerOrder.shift() : 0;
+
+    // Only reshuffle when the *set/order* of available items changes.
+    // `renderAll()` can run frequently; reshuffling here makes the rotation feel repetitive.
+    if (itemsChanged) {
+        headerTickerItemsSignature = nextSignature;
+        rebuildHeaderTickerOrder({ avoidIndex: headerTickerIndex });
+        headerTickerIndex = headerTickerOrder.length ? headerTickerOrder.shift() : 0;
+    } else {
+        // Clamp in case the list shrank but signature somehow remained stable.
+        if (!Number.isInteger(headerTickerIndex) || headerTickerIndex < 0 || headerTickerIndex >= headerTickerItems.length) {
+            headerTickerIndex = 0;
+        }
+    }
 
     renderHeaderTickerCurrent(false);
 }
@@ -292,7 +337,7 @@ function rotateHeaderTicker() {
     if (!Array.isArray(headerTickerItems) || headerTickerItems.length <= 1) return;
 
     if (!Array.isArray(headerTickerOrder) || headerTickerOrder.length === 0) {
-        rebuildHeaderTickerOrder();
+        rebuildHeaderTickerOrder({ avoidIndex: headerTickerIndex });
     }
 
     // Avoid immediate repeat when possible
@@ -309,11 +354,43 @@ function rotateHeaderTicker() {
     renderHeaderTickerCurrent(true);
 }
 
-function rebuildHeaderTickerOrder() {
+function rebuildHeaderTickerOrder(options) {
     const n = Array.isArray(headerTickerItems) ? headerTickerItems.length : 0;
     headerTickerOrder = [];
     for (let i = 0; i < n; i++) headerTickerOrder.push(i);
-    shuffleInPlace(headerTickerOrder);
+
+    const avoidIndex = options && Number.isInteger(options.avoidIndex) ? options.avoidIndex : null;
+
+    // Try a few times to avoid repeating the exact same cycle order.
+    // This matters a lot when n is small and repeats are noticeable.
+    let attempts = 0;
+    while (attempts < 4) {
+        shuffleInPlace(headerTickerOrder);
+
+        // Avoid starting with the currently visible item when possible.
+        if (avoidIndex !== null && n > 1 && headerTickerOrder[0] === avoidIndex) {
+            const swapIdx = headerTickerOrder.findIndex(i => i !== avoidIndex);
+            if (swapIdx > 0) {
+                const tmp = headerTickerOrder[0];
+                headerTickerOrder[0] = headerTickerOrder[swapIdx];
+                headerTickerOrder[swapIdx] = tmp;
+            }
+        }
+
+        const sig = headerTickerOrder.join(',');
+        if (n <= 2 || sig !== headerTickerLastOrderSignature) {
+            headerTickerLastOrderSignature = sig;
+            break;
+        }
+
+        attempts++;
+    }
+}
+
+function computeHeaderTickerItemsSignature(items) {
+    if (!Array.isArray(items) || items.length === 0) return '';
+    // Keys are already built to be stable identifiers for de-dupe; include kind for safety.
+    return items.map(it => `${it?.kind || ''}:${it?.key || ''}`).join('|');
 }
 
 function shuffleInPlace(arr) {
@@ -357,6 +434,16 @@ function renderHeaderTickerCurrent(animate) {
     container.style.display = '';
     badgeEl.textContent = item.badge || 'NEXT';
 
+    // Advance template rotation only when the displayed item changes.
+    // `renderAll()` may call `renderHeaderTicker()` often; we must not bump on re-renders.
+    if (item.key && item.key !== headerTickerLastDisplayedKey) {
+        headerTickerLastDisplayedKey = item.key;
+        headerTickerDisplayCounter++;
+        bumpHeaderTickerShownCount(item.key);
+    }
+
+    const itemText = getHeaderTickerItemText(item);
+
     const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const shouldAnimate = !!animate && !prefersReducedMotion;
 
@@ -364,7 +451,7 @@ function renderHeaderTickerCurrent(animate) {
     const nextEl = headerTickerActiveLane === 'a' ? textB : textA;
 
     if (!shouldAnimate) {
-        activeEl.textContent = item.text || '';
+        activeEl.textContent = itemText;
         activeEl.classList.add('is-active');
         activeEl.classList.remove('is-exiting');
 
@@ -372,7 +459,7 @@ function renderHeaderTickerCurrent(animate) {
         nextEl.classList.remove('is-active');
         nextEl.classList.remove('is-exiting');
     } else {
-        nextEl.textContent = item.text || '';
+        nextEl.textContent = itemText;
         nextEl.classList.remove('is-exiting');
 
         // Ensure starting positions are applied before toggling classes
@@ -429,7 +516,8 @@ function buildHeaderTickerItems() {
             key: 'no_semester',
             kind: 'info',
             badge: 'SETUP',
-            text: buildFunMessage('no_semester', {}, 'no_semester')
+            templateCategory: 'no_semester',
+            templateVars: {}
         }];
     }
 
@@ -438,13 +526,17 @@ function buildHeaderTickerItems() {
             key: 'no_courses',
             kind: 'info',
             badge: 'SETUP',
-            text: buildFunMessage('no_courses', {}, 'no_courses')
+            templateCategory: 'no_courses',
+            templateVars: {}
         }];
     }
 
     const now = new Date();
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
+
+    const messageSeed = getHeaderTickerMessageSeed(now);
+    headerTickerMessageSeed = messageSeed;
 
     const items = [];
 
@@ -467,12 +559,13 @@ function buildHeaderTickerItems() {
             key: 'no_schedule',
             kind: 'info',
             badge: 'SETUP',
-            text: buildFunMessage('no_schedule', {}, 'no_schedule')
+            templateCategory: 'no_schedule',
+            templateVars: {}
         });
     }
 
     // 2) Homework: take up to 2 most urgent incomplete items with a due date
-    const homeworkItems = collectUrgentHomeworkItems(semester, todayStart);
+    const homeworkItems = collectHomeworkTickerItems(semester, todayStart, messageSeed, 2);
     items.push(...homeworkItems.slice(0, 2));
 
     // 2.5) Homework volume nudge (when there is a pile)
@@ -480,8 +573,8 @@ function buildHeaderTickerItems() {
     if (hwMany) items.push(hwMany);
 
     // 3) Exams: take the soonest upcoming exam (A/B)
-    const examItems = collectUpcomingExamItems(semester, todayStart);
-    items.push(...examItems.slice(0, 1));
+    const examItems = collectExamTickerItems(semester, todayStart, messageSeed, 1);
+    items.push(...examItems);
 
     // 4) Homework without due date (nudge to set one)
     const noDateHw = collectHomeworkWithoutDueDate(semester);
@@ -510,7 +603,8 @@ function buildHeaderTickerItems() {
             key: 'no_classes_today',
             kind: 'info',
             badge: 'FREE',
-            text: buildFunMessage('no_classes_today', {}, 'no_classes_today')
+            templateCategory: 'no_classes_today',
+            templateVars: {}
         });
     }
 
@@ -529,25 +623,37 @@ function buildHeaderTickerItems() {
                 key: `late_night:${timeStr}`,
                 kind: 'info',
                 badge: 'ZZZ',
-                text: buildFunMessage('late_night', { time: timeStr }, `late_night:${timeStr}`)
+                templateCategory: 'late_night',
+                templateVars: { time: timeStr }
             };
         } else if (day === 5 || day === 6) {
             vibe = {
                 key: 'weekend',
                 kind: 'info',
                 badge: 'WEEKEND',
-                text: buildFunMessage('weekend', {}, 'weekend')
+                templateCategory: 'weekend',
+                templateVars: {}
             };
         } else if (hour < 10) {
             vibe = {
                 key: 'morning',
                 kind: 'info',
                 badge: 'AM',
-                text: buildFunMessage('morning', {}, 'morning')
+                templateCategory: 'morning',
+                templateVars: {}
             };
         }
 
         if (vibe) items.push(vibe);
+    }
+
+    // 8) Always-relevant general fillers (kept low-priority so they don't drown urgent stuff)
+    // Always include them so the category is reachable in rotation.
+    // Add at most 1 when there are actionable items; add up to 2 when things are quiet.
+    const general = collectGeneralAlwaysItems(semester, now, messageSeed);
+    if (general.length > 0) {
+        const maxGeneral = hasActionable ? 1 : 2;
+        items.push(...general.slice(0, maxGeneral));
     }
 
     // De-dupe by key (avoid repeats)
@@ -555,7 +661,11 @@ function buildHeaderTickerItems() {
     const deduped = [];
     for (const it of items) {
         if (!it?.key) continue;
-        if (!it?.text || !String(it.text).trim()) continue;
+
+        const hasDirectText = it?.text && String(it.text).trim();
+        const hasTemplate = !!it?.templateCategory && Array.isArray(HEADER_TICKER_TEMPLATES[it.templateCategory]) && HEADER_TICKER_TEMPLATES[it.templateCategory].length > 0;
+        if (!hasDirectText && !hasTemplate) continue;
+
         if (seen.has(it.key)) continue;
         seen.add(it.key);
         deduped.push(it);
@@ -566,11 +676,63 @@ function buildHeaderTickerItems() {
             key: 'all_clear',
             kind: 'info',
             badge: 'OK',
-            text: buildFunMessage('all_clear', {}, 'all_clear')
+            templateCategory: 'all_clear',
+            templateVars: {}
         }];
     }
 
     return deduped;
+}
+
+function collectGeneralAlwaysItems(semester, now, messageSeed) {
+    const ymd = getLocalYMD(now);
+    const out = [];
+
+    // A stable “course roast of the day” so it doesn't change every render.
+    const course = pickStableCourseForDay(semester, `roast|${ymd}`);
+    if (course) {
+        const key = `general_course_roast:${course.id}:${ymd}`;
+        out.push({
+            key,
+            kind: 'info',
+            badge: 'VIBE',
+            templateCategory: 'general_course_roast',
+            templateVars: {
+                course: course.name,
+                courseMaybe: buildCourseMaybe(course.name)
+            }
+        });
+    }
+
+    // General reminders (also stable per day)
+    const key2 = `general:${ymd}`;
+    out.push({
+        key: key2,
+        kind: 'info',
+        badge: 'NOTE',
+        templateCategory: 'general',
+        templateVars: {}
+    });
+
+    return out;
+}
+
+function pickStableCourseForDay(semester, seed) {
+    const courses = (semester?.courses || []).filter(c => c && c.id);
+    if (courses.length === 0) return null;
+    const idx = stableHashIndex(seed, courses.length);
+    return courses[idx];
+}
+
+function stableHashIndex(seed, modulo) {
+    const n = Number(modulo);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    const str = String(seed || '');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash * 31 + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash) % n;
 }
 
 function findCurrentAndNextClass(semester, now) {
@@ -595,19 +757,18 @@ function findCurrentAndNextClass(semester, now) {
                 const graceStart = startMin - 5;
                 const graceEnd = endMin + 5;
                 if (nowMinutes >= graceStart && nowMinutes <= graceEnd) {
-                    const text = buildFunMessage('class_now', {
-                        course: course.name,
-                        courseMaybe: buildCourseMaybe(course.name),
-                        start: slot.start,
-                        end: slot.end,
-                        location: course.location || ''
-                    }, `class_now:${slotId}`);
-
                     current = {
                         key: `class_now:${slotId}`,
                         kind: 'class',
                         badge: 'NOW',
-                        text,
+                        templateCategory: 'class_now',
+                        templateVars: {
+                            course: course.name,
+                            courseMaybe: buildCourseMaybe(course.name),
+                            start: slot.start,
+                            end: slot.end,
+                            location: course.location || ''
+                        },
                         courseId: course.id,
                         color: course.color,
                         slotId
@@ -624,19 +785,19 @@ function findCurrentAndNextClass(semester, now) {
                         const badge = minutesUntil <= 60 ? 'SOON' : 'NEXT';
 
                         const templateCategory = minutesUntil <= 15 ? 'class_soon' : 'class_next';
-                        const text = buildFunMessage(templateCategory, {
-                            course: course.name,
-                            courseMaybe: buildCourseMaybe(course.name),
-                            start: slot.start,
-                            end: slot.end,
-                            minutes: String(minutesUntil)
-                        }, `class_next:${slotId}`);
 
                         next = {
                             key: `class_next:${slotId}`,
                             kind: 'class',
                             badge,
-                            text,
+                            templateCategory,
+                            templateVars: {
+                                course: course.name,
+                                courseMaybe: buildCourseMaybe(course.name),
+                                start: slot.start,
+                                end: slot.end,
+                                minutes: String(minutesUntil)
+                            },
                             courseId: course.id,
                             color: course.color,
                             slotId,
@@ -663,8 +824,8 @@ function findCurrentAndNextClass(semester, now) {
     return { currentClass: current, nextClass: next };
 }
 
-function collectUrgentHomeworkItems(semester, todayStart) {
-    const items = [];
+function collectHomeworkTickerItems(semester, todayStart, seed, maxItems) {
+    const all = [];
 
     for (const course of semester.courses || []) {
         const hws = Array.isArray(course.homework) ? course.homework : [];
@@ -679,42 +840,94 @@ function collectUrgentHomeworkItems(semester, todayStart) {
             dueStart.setHours(0, 0, 0, 0);
             const diffDays = Math.ceil((dueStart - todayStart) / (1000 * 60 * 60 * 24));
 
-            const category = diffDays < 0 ? 'hw_overdue' : (diffDays === 0 ? 'hw_today' : (diffDays === 1 ? 'hw_tomorrow' : 'hw_soon'));
+            const category = diffDays < 0
+                ? 'hw_overdue'
+                : (diffDays === 0 ? 'hw_today' : (diffDays === 1 ? 'hw_tomorrow' : 'hw_soon'));
+
             const badge = diffDays < 0 ? 'HW!' : 'HW';
+            const key = `hw:${course.id}:${hwIndex}:${hw.dueDate}`;
 
-            const text = buildFunMessage(category, {
-                title: hw.title || 'Homework',
-                course: course.name,
-                courseMaybe: buildCourseMaybe(course.name),
-                days: String(Math.abs(diffDays))
-            }, `hw:${course.id}:${hwIndex}:${hw.dueDate}`);
-
-            items.push({
-                key: `hw:${course.id}:${hwIndex}:${hw.dueDate}`,
+            all.push({
+                key,
                 kind: 'homework',
                 badge,
-                text,
+                category,
                 courseId: course.id,
+                courseName: course.name,
+                courseMaybe: buildCourseMaybe(course.name),
                 hwIndex,
-                color: course.color,
-                due: dueStart,
-                priority: diffDays < 0 ? 0 : 1
+                title: hw.title || 'Homework',
+                diffDays,
+                dueStart
             });
         });
     }
 
-    // Sort: overdue first, then soonest due
-    items.sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority;
-        return a.due - b.due;
-    });
+    if (all.length === 0) return [];
 
-    items.forEach(it => {
-        delete it.due;
-        delete it.priority;
-    });
+    const selected = [];
+    const usedKeys = new Set();
 
-    return items;
+    const overdue = all.filter(x => x.diffDays < 0);
+    const today = all.filter(x => x.diffDays === 0);
+    const tomorrow = all.filter(x => x.diffDays === 1);
+    const soon = all.filter(x => x.diffDays >= 2 && x.diffDays <= 7);
+    const later = all.filter(x => x.diffDays > 7);
+
+    // First pick: always urgency-biased, but random within the urgency bucket.
+    const firstPool = overdue.length ? overdue : (today.length ? today : (tomorrow.length ? tomorrow : (soon.length ? soon : later)));
+    const first = stablePickOne(firstPool, `${seed}|hw|first`);
+    if (first) {
+        usedKeys.add(first.key);
+        selected.push(first);
+    }
+
+    // Second pick: avoid same course if possible and allow less-urgent items sometimes.
+    const limit = Math.max(0, Number(maxItems) || 0);
+    if (limit > 1) {
+        const remaining = all.filter(x => !usedKeys.has(x.key));
+        const preferDifferentCourse = selected[0]?.courseId;
+        let pool = remaining;
+        const diffCourse = preferDifferentCourse ? remaining.filter(x => x.courseId !== preferDifferentCourse) : remaining;
+        if (diffCourse.length > 0) pool = diffCourse;
+
+        // Build a weighted list of buckets to pick from (still urgency-aware, not always closest).
+        const buckets = [];
+        const pushBucket = (name, arr, weight) => {
+            if (!arr || arr.length === 0) return;
+            for (let i = 0; i < weight; i++) buckets.push({ name, arr });
+        };
+
+        pushBucket('overdue', pool.filter(x => x.diffDays < 0), 5);
+        pushBucket('today', pool.filter(x => x.diffDays === 0), 4);
+        pushBucket('tomorrow', pool.filter(x => x.diffDays === 1), 3);
+        pushBucket('soon', pool.filter(x => x.diffDays >= 2 && x.diffDays <= 7), 2);
+        pushBucket('later', pool.filter(x => x.diffDays > 7), 1);
+
+        const chosenBucket = stablePickOne(buckets, `${seed}|hw|secondBucket`);
+        const secondPool = chosenBucket?.arr || pool;
+        const second = stablePickOne(secondPool, `${seed}|hw|second`);
+        if (second) {
+            usedKeys.add(second.key);
+            selected.push(second);
+        }
+    }
+
+    // Convert to ticker items
+    return selected.map(h => ({
+        key: h.key,
+        kind: 'homework',
+        badge: h.badge,
+        templateCategory: h.category,
+        templateVars: {
+            title: h.title,
+            course: h.courseName,
+            courseMaybe: h.courseMaybe,
+            days: String(Math.abs(h.diffDays))
+        },
+        courseId: h.courseId,
+        hwIndex: h.hwIndex
+    }));
 }
 
 function collectUpcomingExamItems(semester, todayStart) {
@@ -744,19 +957,18 @@ function collectUpcomingExamItems(semester, todayStart) {
 
             const category = diffDays === 0 ? 'exam_today' : (diffDays === 1 ? 'exam_tomorrow' : (diffDays <= 3 ? 'exam_soon' : 'exam'));
 
-            const text = buildFunMessage(category, {
-                course: course.name,
-                courseMaybe: buildCourseMaybe(course.name),
-                examType: c.examType,
-                days: String(diffDays),
-                date: prettyDate
-            }, `exam:${course.id}:${c.examType}:${c.dateStr}`);
-
             items.push({
                 key: `exam:${course.id}:${c.examType}:${c.dateStr}`,
                 kind: 'exam',
                 badge,
-                text,
+                templateCategory: category,
+                templateVars: {
+                    course: course.name,
+                    courseMaybe: buildCourseMaybe(course.name),
+                    examType: c.examType,
+                    days: String(diffDays),
+                    date: prettyDate
+                },
                 courseId: course.id,
                 color: course.color,
                 when: examStart
@@ -769,6 +981,23 @@ function collectUpcomingExamItems(semester, todayStart) {
     return items;
 }
 
+function collectExamTickerItems(semester, todayStart, seed, maxItems) {
+    const all = collectUpcomingExamItems(semester, todayStart);
+    if (!Array.isArray(all) || all.length === 0) return [];
+
+    const limit = Math.max(0, Number(maxItems) || 0);
+    if (limit <= 0) return [];
+
+    // If there's an exam today/tomorrow, always show that.
+    const urgent = all.filter(e => e.badge === 'EXAM!!');
+    if (urgent.length > 0) return urgent.slice(0, 1);
+
+    // Otherwise, pick among the next few upcoming exams so it doesn't always spam the closest.
+    const window = all.slice(0, Math.min(4, all.length));
+    const picked = stablePickOne(window, `${seed}|exam|pick`);
+    return picked ? [picked] : window.slice(0, 1);
+}
+
 function collectHomeworkWithoutDueDate(semester) {
     for (const course of semester.courses || []) {
         const hws = Array.isArray(course.homework) ? course.homework : [];
@@ -778,17 +1007,16 @@ function collectHomeworkWithoutDueDate(semester) {
             if (hw.dueDate) continue;
 
             const key = `hw_nodate:${course.id}:${hwIndex}`;
-            const text = buildFunMessage('hw_nodate', {
-                title: hw.title || 'Homework',
-                course: course.name,
-                courseMaybe: buildCourseMaybe(course.name)
-            }, key);
-
             return {
                 key,
                 kind: 'homework',
                 badge: 'HW',
-                text,
+                templateCategory: 'hw_nodate',
+                templateVars: {
+                    title: hw.title || 'Homework',
+                    course: course.name,
+                    courseMaybe: buildCourseMaybe(course.name)
+                },
                 courseId: course.id,
                 hwIndex
             };
@@ -819,11 +1047,12 @@ function collectRecordingsBacklog(semester) {
                 key: `recordings_backlog:${course.id}:${backlog}`,
                 kind: 'recordings',
                 badge,
-                text: buildFunMessage(category, {
+                templateCategory: category,
+                templateVars: {
                     course: course.name,
                     courseMaybe: buildCourseMaybe(course.name),
                     count: String(backlog)
-                }, `recordings_backlog:${course.id}`),
+                },
                 courseId: course.id,
                 backlog
             };
@@ -860,7 +1089,8 @@ function collectRecordingsAllCaughtUp(semester) {
         key: 'recordings_clear',
         kind: 'info',
         badge: 'NICE',
-        text: buildFunMessage('recordings_clear', {}, 'recordings_clear')
+        templateCategory: 'recordings_clear',
+        templateVars: {}
     };
 }
 
@@ -884,7 +1114,8 @@ function collectHomeworkAllDone(semester) {
         key: 'hw_all_done',
         kind: 'info',
         badge: 'NICE',
-        text: buildFunMessage('hw_all_done', {}, 'hw_all_done')
+        templateCategory: 'hw_all_done',
+        templateVars: {}
     };
 }
 
@@ -924,11 +1155,12 @@ function collectTomorrowFirstClass(semester, now) {
                     key: `class_tomorrow:${course.id}:${slot.day}:${slot.start}`,
                     kind: 'class',
                     badge: 'TMRW',
-                    text: buildFunMessage('class_tomorrow', {
+                    templateCategory: 'class_tomorrow',
+                    templateVars: {
                         course: course.name,
                         courseMaybe: buildCourseMaybe(course.name),
                         start: slot.start
-                    }, `class_tomorrow:${course.id}:${slot.day}:${slot.start}`),
+                    },
                     courseId: course.id,
                     color: course.color,
                     when
@@ -958,11 +1190,25 @@ function collectHomeworkVolumeNudge(semester) {
         key: `hw_many:${count}`,
         kind: 'info',
         badge: 'HW+',
-        text: buildFunMessage('hw_many', {
+        templateCategory: 'hw_many',
+        templateVars: {
             count: String(count),
             countMinusOne: String(Math.max(0, count - 1))
-        }, `hw_many:${count}`)
+        }
     };
+}
+
+function stablePickOne(arr, seed) {
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    const idx = stableHashIndex(seed, arr.length);
+    return arr[idx];
+}
+
+function getHeaderTickerMessageSeed(now) {
+    const d = now instanceof Date ? now : new Date();
+    // Rotate selection + template choice every 30 minutes (stable within the window to avoid renderAll jitter).
+    const bucket = Math.floor(d.getTime() / (1000 * 60 * 30));
+    return `${getLocalYMD(d)}|${bucket}`;
 }
 
 // ============================================================================
@@ -1018,12 +1264,13 @@ function getTomorrowOccurrenceStart(now, startHHMM) {
     return candidate;
 }
 
-function buildFunMessage(category, vars, key) {
+function buildFunMessage(category, vars, key, options) {
     const templates = HEADER_TICKER_TEMPLATES[category] || [];
     if (!Array.isArray(templates) || templates.length === 0) return '';
 
     const dailySalt = getLocalYMD(new Date());
-    const template = stablePickTemplate(templates, `${key || category}|${dailySalt}`);
+    const step = Number.isFinite(options?.step) ? Number(options.step) : 0;
+    const template = pickTemplateFromBag(category, templates, String(key || category), dailySalt, step);
     return template
         .replace(/\{(\w+)\}/g, (_, name) => {
             const value = vars?.[name];
@@ -1031,6 +1278,84 @@ function buildFunMessage(category, vars, key) {
         })
         .replace(/\s+/g, ' ')
         .trim();
+}
+
+function pickTemplateFromBag(category, templates, key, dailySalt, step) {
+    const len = templates.length;
+    if (len <= 1) return templates[0] || '';
+
+    const bag = getTemplateBag(category, len, dailySalt);
+    const base = stableHashIndex(`${category}|${key}`, bag.length);
+    const s = Number.isFinite(step) ? step : 0;
+    const idxInBag = (base + s) % bag.length;
+    return templates[bag[idxInBag]];
+}
+
+function getTemplateBag(category, len, dailySalt) {
+    const cacheKey = `${category}|${dailySalt}|${len}`;
+    const cached = headerTickerTemplateBagCache.get(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length === len) return cached;
+
+    const bag = [];
+    for (let i = 0; i < len; i++) bag.push(i);
+
+    const seed = hashStringToInt32(`${category}|${dailySalt}|${len}`);
+    const rnd = createXorShift32(seed);
+
+    for (let i = bag.length - 1; i > 0; i--) {
+        const j = rnd() % (i + 1);
+        const tmp = bag[i];
+        bag[i] = bag[j];
+        bag[j] = tmp;
+    }
+
+    headerTickerTemplateBagCache.set(cacheKey, bag);
+    return bag;
+}
+
+function hashStringToInt32(str) {
+    const s = String(str || '');
+    let hash = 0;
+    for (let i = 0; i < s.length; i++) {
+        hash = (hash * 31 + s.charCodeAt(i)) | 0;
+    }
+    return hash | 0;
+}
+
+function createXorShift32(seedInt) {
+    let x = (seedInt | 0) || 123456789;
+    return function next() {
+        // xorshift32
+        x ^= (x << 13);
+        x ^= (x >>> 17);
+        x ^= (x << 5);
+        // Convert to uint32
+        return (x >>> 0);
+    };
+}
+
+function getHeaderTickerItemText(item) {
+    if (!item) return '';
+    if (item.templateCategory) {
+        const shown = getHeaderTickerShownCount(item.key || '');
+        const seedBump = stableHashIndex(String(headerTickerMessageSeed || ''), 1000);
+        const step = shown + seedBump + headerTickerDisplayCounter;
+        return buildFunMessage(item.templateCategory, item.templateVars || {}, item.key || item.templateCategory, { step });
+    }
+    return item.text ? String(item.text) : '';
+}
+
+function bumpHeaderTickerShownCount(key) {
+    const k = String(key || '');
+    if (!k) return;
+    const prev = headerTickerShownCountByKey.get(k) || 0;
+    headerTickerShownCountByKey.set(k, prev + 1);
+}
+
+function getHeaderTickerShownCount(key) {
+    const k = String(key || '');
+    if (!k) return 0;
+    return headerTickerShownCountByKey.get(k) || 0;
 }
 
 function stablePickTemplate(templates, key) {
