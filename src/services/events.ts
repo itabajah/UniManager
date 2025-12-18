@@ -3,15 +3,15 @@
  * Sets up all event listeners using event delegation.
  */
 
-import { store } from '@/state';
-import { $, generateCourseColor } from '@/utils';
-import * as modals from './modals';
-import * as courseService from './courses';
-import * as recordingService from './recordings';
-import * as homeworkService from './homework';
-import { toggleTheme, updateBaseColorPreview } from './theme';
 import * as render from '@/render';
+import { store } from '@/state';
 import type { ColorTheme } from '@/types';
+import { $, generateCourseColor } from '@/utils';
+import * as courseService from './courses';
+import * as homeworkService from './homework';
+import * as modals from './modals';
+import * as recordingService from './recordings';
+import { toggleTheme, updateBaseColorPreview } from './theme';
 
 // ============================================================================
 // HELPER FUNCTIONS

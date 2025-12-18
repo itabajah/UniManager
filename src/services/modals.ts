@@ -3,10 +3,10 @@
  * Handles opening, closing, and populating modal dialogs.
  */
 
+import { COLOR_THEMES, DEFAULT_CALENDAR_SETTINGS } from '@/constants';
 import { store } from '@/state';
 import { $ } from '@/utils';
-import { COLOR_THEMES, DEFAULT_CALENDAR_SETTINGS } from '@/constants';
-import { updateCourseColorSlider, updateBaseColorPreview } from './theme';
+import { updateBaseColorPreview, updateCourseColorSlider } from './theme';
 
 import type { Course, ScheduleItem } from '@/types';
 
@@ -774,8 +774,6 @@ export function populateSemesterOptions(): void {
 // ============================================================================
 
 export {
-  tempColorTheme,
-  tempBaseColorHue,
-  originalColorTheme,
-  originalBaseColorHue,
+    originalBaseColorHue, originalColorTheme, tempBaseColorHue, tempColorTheme
 };
+

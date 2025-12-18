@@ -3,14 +3,14 @@
  * Initializes the application and sets up all modules.
  */
 
-import { store } from '@/state';
-import { initTheme, toggleTheme } from '@/services/theme';
-import { setupEventListeners } from '@/services/events';
-import { initializeFirebaseSync, autoSyncToFirebase } from '@/services/firebase-sync';
-import { firebaseConfig } from '@/services/firebase-config';
-import * as modals from '@/services/modals';
-import * as render from '@/render';
 import { TIME_UPDATE_INTERVAL } from '@/constants';
+import * as render from '@/render';
+import { setupEventListeners } from '@/services/events';
+import { firebaseConfig } from '@/services/firebase-config';
+import { autoSyncToFirebase, initializeFirebaseSync } from '@/services/firebase-sync';
+import * as modals from '@/services/modals';
+import { initTheme, toggleTheme } from '@/services/theme';
+import { store } from '@/state';
 
 // Import styles
 import './styles/main.css';

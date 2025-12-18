@@ -3,7 +3,7 @@
  * These functions have no side effects and do not depend on application state.
  */
 
-import { HTML_ENTITIES, GOLDEN_ANGLE, COLOR_THEMES } from '@/constants';
+import { COLOR_THEMES, GOLDEN_ANGLE, HTML_ENTITIES } from '@/constants';
 
 import type { AppSettings, ColorTheme } from '@/types';
 

@@ -11,30 +11,30 @@
 
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  type Auth,
-  type User,
+    signOut as firebaseSignOut,
+    getAuth,
+    GoogleAuthProvider,
+    onAuthStateChanged,
+    signInWithPopup,
+    type Auth,
+    type User,
 } from 'firebase/auth';
 import {
-  getDatabase,
-  ref,
-  get,
-  set,
-  onValue,
-  type Database,
-  type DatabaseReference,
-  type Unsubscribe,
+    get,
+    getDatabase,
+    onValue,
+    ref,
+    set,
+    type Database,
+    type DatabaseReference,
+    type Unsubscribe,
 } from 'firebase/database';
 
-import { store } from '@/state';
 import * as render from '@/render';
+import { store } from '@/state';
 import { $ } from '@/utils';
 
-import type { FirebaseConfig, AppData, Profile } from '@/types';
+import type { AppData, FirebaseConfig, Profile } from '@/types';
 
 // ============================================================================
 // CONSTANTS

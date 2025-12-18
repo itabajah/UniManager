@@ -4,23 +4,23 @@
  */
 
 import {
-  STORAGE_KEYS,
-  DEFAULT_CALENDAR_SETTINGS,
-  DEFAULT_THEME_SETTINGS,
-  DEFAULT_RECORDING_TABS,
-  COLOR_THEMES,
+    COLOR_THEMES,
+    DEFAULT_CALENDAR_SETTINGS,
+    DEFAULT_RECORDING_TABS,
+    DEFAULT_THEME_SETTINGS,
+    STORAGE_KEYS,
 } from '@/constants';
 import { compareSemesters, debounce } from '@/utils';
 
 import type {
-  AppData,
-  AppSettings,
-  Semester,
-  Course,
-  Profile,
-  RecordingTab,
-  HomeworkItem,
-  CalendarSettings,
+    AppData,
+    AppSettings,
+    CalendarSettings,
+    Course,
+    HomeworkItem,
+    Profile,
+    RecordingTab,
+    Semester,
 } from '@/types';
 
 // ============================================================================

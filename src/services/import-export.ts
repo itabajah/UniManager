@@ -4,9 +4,9 @@
  */
 
 import { store } from '@/state';
+import type { Course, ScheduleItem } from '@/types';
 import * as courseService from './courses';
 import * as recordingService from './recordings';
-import type { Course, ScheduleItem } from '@/types';
 
 // ============================================================================
 // CONSTANTS

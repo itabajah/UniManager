@@ -3,8 +3,8 @@
  * Handles multiple user profiles with separate data stores.
  */
 
-import { store } from '@/state';
 import * as render from '@/render';
+import { store } from '@/state';
 import { $ } from '@/utils';
 
 // ============================================================================

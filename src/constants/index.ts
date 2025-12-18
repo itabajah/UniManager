@@ -3,7 +3,7 @@
  * Centralized configuration for the UniManager application.
  */
 
-import type { CalendarSettings, AppSettings, RecordingTab } from '@/types';
+import type { AppSettings, CalendarSettings, RecordingTab } from '@/types';
 
 // ============================================================================
 // CALENDAR SETTINGS

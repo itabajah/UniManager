@@ -3,16 +3,16 @@
  * Provides type-safe rendering of semesters, courses, calendar, recordings, homework, and profile UI.
  */
 
-import { store } from '@/state';
-import { escapeHtml, $, compareSemesters } from '@/utils';
 import { DEFAULT_CALENDAR_SETTINGS } from '@/constants';
+import { store } from '@/state';
+import { $, compareSemesters, escapeHtml } from '@/utils';
 
 import type {
-  Course,
-  Semester,
-  HomeworkItem,
-  CalendarEvent,
-  CalendarSettings,
+    CalendarEvent,
+    CalendarSettings,
+    Course,
+    HomeworkItem,
+    Semester,
 } from '@/types';
 
 // ============================================================================
@@ -753,10 +753,6 @@ export function renderProfileUI(): void {
 // ============================================================================
 
 export {
-  calculateCourseProgress,
-  buildCourseMetaParts,
-  getCalendarSettings,
-  collectWeekEvents,
-  isDateInCurrentWeek,
-  getDayOfWeekFromDate,
+    buildCourseMetaParts, calculateCourseProgress, collectWeekEvents, getCalendarSettings, getDayOfWeekFromDate, isDateInCurrentWeek
 };
+

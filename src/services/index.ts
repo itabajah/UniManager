@@ -2,12 +2,13 @@
  * @fileoverview Service module exports
  */
 
-export * from './theme';
 export * from './courses';
-export * from './recordings';
-export * from './homework';
-export * from './modals';
 export * from './events';
-export * from './import-export';
-export * from './profile';
 export * from './firebase-sync';
+export * from './homework';
+export * from './import-export';
+export * from './modals';
+export * from './profile';
+export * from './recordings';
+export * from './theme';
+

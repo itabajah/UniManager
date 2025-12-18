@@ -2,11 +2,11 @@
  * @fileoverview Course CRUD operations and management.
  */
 
-import { store } from '@/state';
-import { generateId, generateCourseColor, getNextAvailableHue, $ } from '@/utils';
 import { DEFAULT_RECORDING_TABS } from '@/constants';
+import { store } from '@/state';
+import { $, generateCourseColor, generateId, getNextAvailableHue } from '@/utils';
 
-import type { Course, ScheduleItem, ExamDates, CourseRecordings } from '@/types';
+import type { Course, CourseRecordings, ExamDates, ScheduleItem } from '@/types';
 
 // ============================================================================
 // COURSE DATA BUILDING

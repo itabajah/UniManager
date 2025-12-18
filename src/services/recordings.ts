@@ -5,7 +5,7 @@
 import { store } from '@/state';
 import { generateId } from '@/utils';
 
-import type { RecordingItem, RecordingTab, Course } from '@/types';
+import type { Course, RecordingItem, RecordingTab } from '@/types';
 
 // ============================================================================
 // HELPER FUNCTIONS
