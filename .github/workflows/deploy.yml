@@ -4,6 +4,15 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy'
+        required: true
+        default: 'v2'
+        type: choice
+        options:
+          - v1
+          - v2
 
 permissions:
   contents: read
@@ -16,25 +25,108 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      # Default to v2 for push events, use input for workflow_dispatch
+      DEPLOY_VERSION: ${{ github.event.inputs.version || 'v2' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
-      - name: Create Firebase Config
-        run: |
-          # Secrets-only deployment: generate runtime config during deploy.
-          # If secrets are missing, fail so we don't ship a broken site.
-          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
-            echo "Missing GitHub Secret: FIREBASE_API_KEY"
-            echo "Add Firebase secrets in: Repo Settings → Secrets and variables → Actions"
-            exit 1
-          fi
 
-          mkdir -p js
-          cat > js/firebase-config.js << 'EOF'
+      - name: Display deployment version
+        run: echo "Deploying version $DEPLOY_VERSION"
+
+      # ========================================
+      # V2 (TypeScript) Build Steps
+      # ========================================
+      - name: Setup Node.js
+        if: env.DEPLOY_VERSION == 'v2'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: env.DEPLOY_VERSION == 'v2'
+        run: npm ci
+
+      - name: Create Firebase Config (TypeScript)
+        if: env.DEPLOY_VERSION == 'v2'
+        run: |
+          # Generate TypeScript Firebase config from GitHub Secrets
+          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
+            echo "::warning::Missing FIREBASE_API_KEY secret - Firebase sync will not work"
+            echo "Add Firebase secrets in: Repo Settings → Secrets and variables → Actions"
+            # Create placeholder config so build doesn't fail
+            cat > src/services/firebase-config.ts << 'EOF'
+          /**
+           * Firebase configuration (placeholder - secrets not configured)
+           */
+          import type { FirebaseConfig } from '@/types';
+          
+          export const firebaseConfig: FirebaseConfig = {
+            apiKey: '',
+            authDomain: '',
+            projectId: '',
+            storageBucket: '',
+            messagingSenderId: '',
+            appId: '',
+            databaseURL: '',
+          };
+          EOF
+          else
+            cat > src/services/firebase-config.ts << EOF
+          /**
+           * Firebase configuration (generated during CI/CD deploy)
+           */
+          import type { FirebaseConfig } from '@/types';
+          
+          export const firebaseConfig: FirebaseConfig = {
+            apiKey: '${{ secrets.FIREBASE_API_KEY }}',
+            authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN }}',
+            projectId: '${{ secrets.FIREBASE_PROJECT_ID }}',
+            storageBucket: '${{ secrets.FIREBASE_STORAGE_BUCKET }}',
+            messagingSenderId: '${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}',
+            appId: '${{ secrets.FIREBASE_APP_ID }}',
+            databaseURL: '${{ secrets.FIREBASE_DATABASE_URL }}',
+            measurementId: '${{ secrets.FIREBASE_MEASUREMENT_ID }}',
+          };
+          EOF
+          fi
+          echo "✓ Created src/services/firebase-config.ts"
+
+      - name: Build V2
+        if: env.DEPLOY_VERSION == 'v2'
+        run: npm run build
+
+      # ========================================
+      # V1 (Legacy JavaScript) Build Steps
+      # ========================================
+      - name: Create Firebase Config (Legacy JS)
+        if: env.DEPLOY_VERSION == 'v1'
+        run: |
+          # Generate JavaScript Firebase config from GitHub Secrets
+          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
+            echo "::warning::Missing FIREBASE_API_KEY secret - Firebase sync will not work"
+            # Create placeholder config
+            cat > v1/js/firebase-config.js << 'EOF'
+          /**
+           * Firebase runtime config (placeholder - secrets not configured)
+           */
+          'use strict';
+          const FIREBASE_CONFIG = {
+            apiKey: '',
+            authDomain: '',
+            projectId: '',
+            storageBucket: '',
+            messagingSenderId: '',
+            appId: '',
+            databaseURL: ''
+          };
+          EOF
+          else
+            cat > v1/js/firebase-config.js << EOF
           /**
            * Firebase runtime config (generated during deploy)
-           * This repo loads Firebase via <script> tags, so we expose FIREBASE_CONFIG globally.
            */
           'use strict';
           
@@ -50,17 +142,27 @@ jobs:
             measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
           };
           EOF
-          test -f js/firebase-config.js
-          echo "✓ Created js/firebase-config.js"
-      
+          fi
+          echo "✓ Created v1/js/firebase-config.js"
+
+      # ========================================
+      # Deploy
+      # ========================================
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      
-      - name: Upload artifact
+
+      - name: Upload V2 artifact
+        if: env.DEPLOY_VERSION == 'v2'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
-      
+          path: 'dist'
+
+      - name: Upload V1 artifact
+        if: env.DEPLOY_VERSION == 'v1'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'v1'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

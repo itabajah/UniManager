@@ -7,9 +7,9 @@
     <meta name="theme-color" content="#2563eb">
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://*.firebaseapp.com https://www.youtube.com https://*.panopto.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src https://www.youtube.com https://*.panopto.com https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.codetabs.com https://corsproxy.org https://api.allorigins.win https://raw.githubusercontent.com;">
-    <title>UniManager</title>
+    <title>UniManager (Legacy v1)</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <!-- CSS is loaded via Vite in development, or bundled in production -->
+    <!-- CSS -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
@@ -638,13 +638,28 @@
         </div>
     </div>
 
-    <!-- Vite module build - ES modules entry point -->
-    <script type="module" src="/src/main.ts"></script>
-    
-    <!-- 
-    Legacy script loading (for reference - not used in production build):
-    - js/constants.js, js/state.js, js/utils.js, etc.
-    -->
+    <!-- Firebase SDK (loaded from CDN for v1) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <!-- Application Scripts (order matters) -->
+    <script src="js/constants.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/course-logic.js"></script>
+    <script src="js/item-logic.js"></script>
+    <script src="js/import-export.js"></script>
+    <script src="js/video-fetch.js"></script>
+    <script src="js/header-ticker.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-sync.js"></script>
+    <script src="js/main.js"></script>
 
     <footer class="site-footer">
         <p>Made by <a href="https://www.linkedin.com/in/ibraheem-tabajah/" target="_blank">Ibrahim Tabajah</a></p>

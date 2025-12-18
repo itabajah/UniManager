@@ -1,0 +1,382 @@
+/**
+ * calendar.css
+ * Weekly calendar grid and schedule-related styles
+ */
+
+.calendar-container {
+    flex: 2;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    padding: 25px;
+    border: 1px solid var(--border-primary);
+    min-width: 350px;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Calendar scroll wrapper - for horizontal scrolling on mobile */
+.calendar-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    margin: 0 -25px;
+    padding: 0 25px;
+}
+
+/* Full width in single day mode */
+.calendar-scroll-wrapper.single-day-mode {
+    overflow-x: hidden;
+}
+
+.calendar-scroll-wrapper.single-day-mode #weekly-schedule {
+    min-width: 100%;
+}
+
+/* Weekly Schedule Grid */
+.weekly-schedule {
+    display: grid;
+    grid-template-columns: 40px repeat(6, 1fr); /* Time col + 6 days (Sun-Fri) */
+    gap: 2px;
+    background: var(--border-primary);
+    border: 1px solid var(--border-primary);
+    font-size: 10px;
+}
+
+.schedule-header {
+    background: var(--bg-tertiary);
+    padding: 5px;
+    text-align: center;
+    font-weight: bold;
+    color: var(--text-secondary);
+}
+
+.schedule-time-col {
+    background: var(--bg-tertiary);
+    padding: 5px 2px;
+    text-align: right;
+    color: var(--text-tertiary);
+    border-top: 1px solid var(--border-secondary);
+}
+
+.schedule-cell {
+    background: var(--bg-secondary);
+    min-height: 30px;
+    position: relative;
+}
+
+.schedule-block {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    background: var(--accent);
+    color: var(--bg-secondary);
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 9px;
+    overflow: hidden;
+    cursor: pointer;
+    z-index: 1;
+    opacity: 0.9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.schedule-block:hover {
+    opacity: 1;
+    z-index: 10;
+}
+
+.current-time-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #ef4444; /* Red */
+    z-index: 15;
+    pointer-events: none;
+}
+
+.current-time-line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+}
+
+.schedule-placeholder {
+    grid-column: 1 / -1;
+    background: var(--bg-secondary);
+    padding: 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* All-Day Events Row */
+.schedule-events-label {
+    background: var(--bg-tertiary);
+    padding: 4px 2px;
+    text-align: right;
+    font-size: 9px;
+    color: var(--text-tertiary);
+    border-top: 1px solid var(--border-secondary);
+    font-style: italic;
+}
+
+.schedule-events-cell {
+    background: var(--bg-secondary);
+    min-height: 24px;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-top: 1px solid var(--border-secondary);
+}
+
+/* Event Chips (inside events row) */
+.schedule-event-chip {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 4px;
+    background: var(--bg-tertiary);
+    border-left: 2px solid var(--accent);
+    border-radius: 2px;
+    font-size: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+}
+
+.schedule-event-chip:hover {
+    background: var(--border-primary);
+}
+
+.schedule-event-chip .event-chip-icon {
+    font-size: 8px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.schedule-event-chip .event-chip-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.schedule-event-chip.schedule-event-homework {
+    border-left-color: var(--success-border);
+}
+
+.schedule-event-chip.schedule-event-homework .event-chip-icon {
+    color: var(--success-border);
+}
+
+.schedule-event-chip.schedule-event-exam {
+    border-left-color: var(--error-border);
+}
+
+.schedule-event-chip.schedule-event-exam .event-chip-icon {
+    color: var(--error-border);
+}
+
+.schedule-event-chip.schedule-event-completed {
+    opacity: 0.5;
+}
+
+.schedule-event-chip.schedule-event-completed .event-chip-title {
+    text-decoration: line-through;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode .schedule-block {
+    background: #404040;
+    color: #fafafa;
+    border: 1px solid #525252;
+}
+
+body.dark-mode .schedule-event-chip {
+    background: var(--bg-tertiary);
+}
+
+body.dark-mode .schedule-event-chip:hover {
+    background: var(--border-secondary);
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS FOR CALENDAR
+   ======================================== */
+
+/* Tablets and smaller */
+@media (max-width: 900px) {
+    .calendar-container {
+        min-width: 0;
+        height: auto;
+        padding: 20px;
+    }
+    
+    .calendar-scroll-wrapper {
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
+    
+    .weekly-schedule {
+        min-width: 600px;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    .calendar-container {
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .calendar-scroll-wrapper {
+        margin: 0 -15px;
+        padding: 0 15px;
+    }
+    
+    .weekly-schedule {
+        font-size: 11px;
+        gap: 1px;
+    }
+    
+    .schedule-header {
+        padding: 8px 4px;
+        font-size: 11px;
+    }
+    
+    .schedule-time-col {
+        padding: 8px 4px;
+        font-size: 10px;
+    }
+    
+    .schedule-cell {
+        min-height: 40px;
+    }
+    
+    .schedule-block {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+    
+    .schedule-event-chip {
+        padding: 4px 6px;
+        font-size: 10px;
+        min-height: 32px;
+    }
+    
+    .schedule-event-chip .event-chip-icon {
+        font-size: 10px;
+    }
+    
+    /* Homework sidebar */
+    .upcoming-list {
+        gap: 10px;
+    }
+}
+
+/* Mobile landscape & larger phones */
+@media (max-width: 640px) {
+    .calendar-container {
+        padding: 12px;
+    }
+    
+    .weekly-schedule {
+        min-width: 550px;
+    }
+    
+    .schedule-event-chip {
+        min-height: 36px;
+        padding: 6px 8px;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    .calendar-container {
+        padding: 10px;
+    }
+    
+    .calendar-scroll-wrapper {
+        margin: 0 -10px;
+        padding: 0 10px;
+    }
+    
+    /* Make calendar horizontally scrollable */
+    .weekly-schedule {
+        min-width: 500px;
+        font-size: 10px;
+    }
+    
+    .schedule-header {
+        padding: 6px 2px;
+        font-size: 10px;
+    }
+    
+    .schedule-time-col {
+        padding: 6px 2px;
+        font-size: 9px;
+    }
+    
+    .schedule-cell {
+        min-height: 35px;
+    }
+    
+    .schedule-block {
+        font-size: 9px;
+        padding: 3px 4px;
+    }
+    
+    .schedule-event-chip {
+        font-size: 9px;
+        padding: 4px 6px;
+        min-height: 32px;
+    }
+    
+    .schedule-event-chip .event-chip-icon {
+        font-size: 9px;
+    }
+    
+    /* Homework list */
+    .upcoming-homework-item {
+        padding: 10px;
+    }
+    
+    .homework-checkbox {
+        min-width: 22px;
+        min-height: 22px;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+    .calendar-container {
+        padding: 8px;
+    }
+    
+    .weekly-schedule {
+        min-width: 450px;
+        font-size: 9px;
+    }
+    
+    .schedule-header {
+        padding: 4px 2px;
+        font-size: 9px;
+    }
+    
+    .schedule-time-col {
+        padding: 4px 2px;
+        font-size: 8px;
+    }
+}

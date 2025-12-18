@@ -1,17 +1,40 @@
-# OS files
-.DS_Store
-Thumbs.db
+# Dependencies
+node_modules/
 
-# Editor files
-.vscode/
+# Build output
+dist/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
 *~
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
 # Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Firebase runtime config (local dev only; deploy generates this from GitHub Secrets)
+# TypeScript cache
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Firebase config (should not be committed - generated during CI/CD)
+src/services/firebase-config.ts
 js/firebase-config.js
+v1/js/firebase-config.js

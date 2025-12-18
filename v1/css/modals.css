@@ -1,0 +1,733 @@
+/**
+ * modals.css
+ * Modal overlay and modal content styles
+ */
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    background: var(--bg-secondary);
+    padding: 30px;
+    border-radius: 2px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(20px);
+    transition: transform 0.3s;
+    position: relative;
+}
+
+.modal-overlay.active .modal {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    padding-bottom: 10px;
+    position: sticky;
+    top: -30px;
+    background: var(--bg-secondary);
+    margin-left: -30px;
+    margin-right: -30px;
+    margin-top: -30px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 30px;
+    z-index: 10;
+}
+
+.modal-title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Panopto Import Instructions */
+.fetch-panopto-instructions {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.fetch-panopto-instructions p {
+    margin: 0 0 8px 0;
+}
+
+.fetch-panopto-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.fetch-panopto-instructions li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.fetch-panopto-instructions li:last-child {
+    margin-bottom: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions .btn-primary {
+    width: auto;
+    flex: 2;
+}
+
+/* ========================================
+   Settings Modal Tabs
+   ======================================== */
+.settings-modal-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 -30px 10px;
+    padding: 10px 30px 15px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.settings-modal-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-modal-tab svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.settings-modal-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-color: var(--text-tertiary);
+}
+
+.settings-modal-tab:hover svg {
+    opacity: 1;
+}
+
+.settings-modal-tab.active {
+    color: var(--bg-secondary);
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(var(--accent-rgb, 59, 130, 246), 0.3);
+}
+
+.settings-modal-tab.active svg {
+    opacity: 1;
+}
+
+/* Settings Tab Panels */
+.settings-tab-panel {
+    display: none;
+    animation: fadeIn 0.2s ease;
+    padding-top: 5px;
+}
+
+.settings-tab-panel.active {
+    display: block;
+}
+
+/* ========================================
+   Course Modal Main Tabs
+   ======================================== */
+.course-modal-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 -30px 10px;
+    padding: 10px 30px 15px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.course-modal-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.course-modal-tab svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.course-modal-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-color: var(--text-tertiary);
+}
+
+.course-modal-tab:hover svg {
+    opacity: 1;
+}
+
+.course-modal-tab.active {
+    color: var(--bg-secondary);
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(var(--accent-rgb, 59, 130, 246), 0.3);
+}
+
+.course-modal-tab.active svg {
+    opacity: 1;
+}
+
+/* Tab Panels */
+.course-tab-panel {
+    display: none;
+    animation: fadeIn 0.2s ease;
+    padding-top: 5px;
+}
+
+.course-tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Panopto Import Styles */
+.panopto-browser-container {
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.panopto-browser-container.hidden {
+    display: none;
+}
+
+.panopto-browser-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.panopto-browser-status {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+.panopto-browser-iframe {
+    width: 100%;
+    height: 350px;
+    border: none;
+    background: var(--bg-primary);
+}
+
+.panopto-browser-actions {
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: center;
+}
+
+.panopto-browser-actions .btn-primary {
+    width: 100%;
+}
+
+/* Panopto Extracted Videos List */
+.panopto-extracted-list {
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.panopto-extracted-list.hidden {
+    display: none;
+}
+
+.panopto-extracted-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.panopto-video-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.panopto-video-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.panopto-video-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.panopto-video-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+}
+
+.panopto-video-item label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panopto-file-info.has-file::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: bold;
+}
+
+/* Panopto Console Script Import */
+.panopto-import-guide {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.panopto-import-guide p {
+    margin: 0 0 10px 0;
+    color: var(--text-primary);
+}
+
+.panopto-import-guide ol {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--text-secondary);
+}
+
+.panopto-import-guide li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.panopto-import-guide kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.panopto-script-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 10px 0;
+}
+
+.panopto-script-box code {
+    flex: 1;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.panopto-copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.panopto-copy-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.panopto-copy-btn.copied {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+}
+
+.panopto-paste-area {
+    width: 100%;
+    height: 80px;
+    padding: 10px 12px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 6px;
+    color: var(--text-primary);
+    resize: vertical;
+}
+
+.panopto-paste-area:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS FOR MODALS
+   ======================================== */
+
+/* Tablets and smaller */
+@media (max-width: 900px) {
+    .modal {
+        width: 95%;
+        max-height: 85vh;
+        padding: 20px;
+    }
+    
+    .modal-header {
+        margin-left: -20px;
+        margin-right: -20px;
+        margin-top: -20px;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-top: 20px;
+        top: -20px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -20px 10px;
+        padding: 10px 20px 15px;
+        flex-wrap: wrap;
+    }
+    
+    .modal-wide {
+        max-width: 95%;
+    }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+    .modal {
+        width: 98%;
+        max-height: 90vh;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .modal-header {
+        margin-left: -15px;
+        margin-right: -15px;
+        margin-top: -15px;
+        padding-left: 15px;
+        padding-right: 15px;
+        padding-top: 15px;
+        top: -15px;
+    }
+    
+    .modal-title {
+        font-size: 18px;
+    }
+    
+    .close-btn {
+        font-size: 28px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -15px 10px;
+        padding: 8px 15px 12px;
+        gap: 6px;
+    }
+    
+    .course-modal-tab,
+    .settings-modal-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+        min-height: 44px;
+    }
+    
+    .course-modal-tab svg,
+    .settings-modal-tab svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    /* Recordings tabs */
+    .recordings-tabs-row {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .recordings-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 40px;
+    }
+    
+    .recordings-tab-add {
+        min-width: 44px;
+        min-height: 40px;
+    }
+    
+    /* Form groups */
+    .form-group label {
+        font-size: 13px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    /* Modal actions */
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions button {
+        width: 100%;
+        min-height: 48px;
+    }
+}
+
+/* Mobile landscape & larger phones */
+@media (max-width: 640px) {
+    .modal {
+        width: 100%;
+        max-height: 95vh;
+        border-radius: 0;
+        padding: 12px;
+    }
+    
+    .modal-header {
+        margin-left: -12px;
+        margin-right: -12px;
+        margin-top: -12px;
+        padding: 12px;
+        top: -12px;
+    }
+    
+    .modal-title {
+        font-size: 16px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -12px 8px;
+        padding: 8px 12px 10px;
+        gap: 4px;
+    }
+    
+    .course-modal-tab,
+    .settings-modal-tab {
+        flex-direction: column;
+        padding: 8px 6px;
+        gap: 4px;
+        font-size: 10px;
+    }
+    
+    .course-modal-tab svg,
+    .settings-modal-tab svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-header {
+        margin: -10px -10px 0;
+        padding: 10px;
+        top: -10px;
+    }
+    
+    .modal-title {
+        font-size: 15px;
+    }
+    
+    .course-modal-tabs,
+    .settings-modal-tabs {
+        margin: 0 -10px 8px;
+        padding: 6px 10px 8px;
+    }
+    
+    .course-modal-tab span,
+    .settings-modal-tab span {
+        display: none;
+    }
+    
+    .course-modal-tab,
+    .settings-modal-tab {
+        min-width: 50px;
+        justify-content: center;
+    }
+    
+    /* Recordings actions */
+    .recordings-actions-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .recordings-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .recordings-action-btn span {
+        display: inline;
+    }
+    
+    .recordings-action-btn svg {
+        margin-right: 6px;
+    }
+    
+    .recordings-show-watched-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Panopto script box */
+    .panopto-script-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .panopto-copy-btn {
+        width: 100%;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 360px) {
+    .modal-title {
+        font-size: 14px;
+    }
+    
+    .course-modal-tab svg,
+    .settings-modal-tab svg {
+        width: 20px;
+        height: 20px;
+    }
+}

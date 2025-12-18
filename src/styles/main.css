@@ -1,0 +1,22 @@
+/**
+ * Main CSS entry point
+ * Imports all CSS modules in the correct order
+ */
+
+/* Base styles and CSS variables */
+@import '../../css/base.css';
+
+/* Layout components */
+@import '../../css/layout.css';
+
+/* UI components */
+@import '../../css/components.css';
+
+/* Calendar styles */
+@import '../../css/calendar.css';
+
+/* Modal styles */
+@import '../../css/modals.css';
+
+/* Utility classes */
+@import '../../css/utils.css';
