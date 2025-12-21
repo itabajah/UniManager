@@ -356,6 +356,7 @@ function migrateData(data) {
     
     // Migrate settings
     if (typeof data.settings.showCompleted === 'undefined') data.settings.showCompleted = true;
+    if (typeof data.settings.showWatchedRecordings === 'undefined') data.settings.showWatchedRecordings = false;
     if (!data.settings.colorTheme) data.settings.colorTheme = COLOR_THEMES.COLORFUL;
     if (typeof data.settings.baseColorHue === 'undefined') data.settings.baseColorHue = 200;
     

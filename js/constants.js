@@ -75,6 +75,7 @@ const COLOR_THEMES = Object.freeze({
 const DEFAULT_THEME_SETTINGS = Object.freeze({
     theme: 'light',
     showCompleted: true,
+    showWatchedRecordings: false,
     colorTheme: COLOR_THEMES.COLORFUL,
     baseColorHue: 200
 });

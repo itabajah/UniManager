@@ -224,6 +224,7 @@ function loadRecordingsTab(course) {
     // Setup show watched toggle
     const showWatchedToggle = $('show-watched-toggle');
     if (showWatchedToggle) {
+        showWatchedToggle.checked = appData.settings.showWatchedRecordings !== false;
         showWatchedToggle.onchange = () => renderRecordingsList(course);
     }
     

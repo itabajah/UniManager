@@ -230,34 +230,36 @@ body.dark-mode .theme-icon-moon { display: block !important; }
 /* Tablets portrait */
 @media (max-width: 768px) {
     body {
-        padding: 15px 12px 70px 12px;
+        padding: 8px 12px 70px 12px;
     }
     
     header {
         margin-bottom: 10px;
+        margin-top: 0;
+        align-items: center;
     }
     
     .brand {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 3px;
+        flex-direction: row;
+        align-items: center;
+        gap: 0;
     }
     
     h1 {
-        font-size: 32px;
+        font-size: 9vw;
         letter-spacing: 2px;
+        line-height: 1.1;
     }
     
     .brand-subtitle {
-        font-size: 9px;
-        letter-spacing: 1px;
-        margin-bottom: 0;
+        display: none;
     }
     
     .header-controls {
         gap: 8px;
         margin-bottom: 0;
-        align-self: flex-start;
+        padding-bottom: 0;
+        align-self: center;
     }
     
     #cloud-header-text {
@@ -361,7 +363,8 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     }
     
     h1 {
-        font-size: 20px;
+        font-size: 10vw;
+        letter-spacing: 1.5px;
     }
     
     .app-layout {
@@ -389,7 +392,8 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     }
     
     h1 {
-        font-size: 18px;
+        font-size: 11vw;
+        letter-spacing: 1px;
     }
     
     .header-controls {
@@ -449,7 +453,8 @@ body.dark-mode .theme-icon-moon { display: block !important; }
     }
     
     h1 {
-        font-size: 16px;
+        font-size: 12vw;
+        letter-spacing: 0.5px;
     }
     
     .site-footer {
