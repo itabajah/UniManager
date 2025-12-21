@@ -1,6 +1,6 @@
 /**
  * @file events.js
- * @description Event listeners setup and handlers for the uni-course-manager
+ * @description Event listeners setup and handlers for Tollab
  */
 
 // ============================================================================

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Application constants and configuration values.
- * Centralized configuration for the Uni Course Manager application.
+ * Centralized configuration for the Tollab application.
  */
 
 'use strict';
@@ -42,10 +42,10 @@ const DAY_NAMES_FULL = Object.freeze([
  * @const {Object}
  */
 const STORAGE_KEYS = Object.freeze({
-    PROFILES: 'uniCourseManager_Profiles',
-    ACTIVE_PROFILE: 'uniCourseManager_ActiveProfileId',
-    DATA_PREFIX: 'uniCourseManager_Data_',
-    LEGACY_DATA: 'uniCourseManagerData'
+    PROFILES: 'tollab_profiles',
+    ACTIVE_PROFILE: 'tollab_active',
+    DATA_PREFIX: 'tollab_',
+    SETTINGS: 'tollab_settings'
 });
 
 /**

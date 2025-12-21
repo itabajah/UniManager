@@ -190,7 +190,7 @@ function exportProfile() {
     const a = document.createElement('a');
     a.href = url;
     const safeName = profile.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    a.download = `course-manager-${safeName}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `tollab-${safeName}-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

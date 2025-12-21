@@ -28,22 +28,60 @@
 header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
 }
 
 h1 {
-    color: var(--text-primary);
-    font-size: 28px;
-    font-weight: 300;
-    letter-spacing: -0.5px;
-    transition: color 0.3s;
+    font-family: 'Pacifico', 'Brush Script MT', cursive;
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: transform 0.3s ease;
+    cursor: default;
+}
+
+h1:hover {
+    transform: scale(1.02);
+}
+
+.brand-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+    white-space: nowrap;
+    margin-bottom: 8px;
+}
+
+/* Dark mode gradient enhancement */
+body.dark-mode h1 {
+    background: linear-gradient(135deg, #fafafa 0%, #737373 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
 }
 
 .header-controls {
     display: flex;
     align-items: center;
     gap: 15px;
+    margin-bottom: -3px;
 }
 
 .icon-btn {
@@ -195,12 +233,35 @@ body.dark-mode .theme-icon-moon { display: block !important; }
         padding: 15px 12px 70px 12px;
     }
     
+    header {
+        margin-bottom: 10px;
+    }
+    
+    .brand {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+    }
+    
     h1 {
-        font-size: 22px;
+        font-size: 32px;
+        letter-spacing: 2px;
+    }
+    
+    .brand-subtitle {
+        font-size: 9px;
+        letter-spacing: 1px;
+        margin-bottom: 0;
     }
     
     .header-controls {
-        gap: 10px;
+        gap: 8px;
+        margin-bottom: 0;
+        align-self: flex-start;
+    }
+    
+    #cloud-header-text {
+        display: none;
     }
     
     .icon-btn {

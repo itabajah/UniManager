@@ -1,5 +1,5 @@
 /**
- * @fileoverview Modal dialog management for the Uni Course Manager application.
+ * @fileoverview Modal dialog management for the Tollab application.
  * Handles opening, closing, and populating modal dialogs.
  */
 

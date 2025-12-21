@@ -12,9 +12,9 @@
 
 (() => {
     const LOG = '[FirebaseSync]';
-    const CLOUD_PAYLOAD_VERSION = 1;
+    const CLOUD_PAYLOAD_VERSION = 2;
 
-    const DB_PATH_FOR_USER = (uid) => `unimanager/users/${uid}/allProfiles`;
+    const DB_PATH_FOR_USER = (uid) => `tollab/users/${uid}/data`;
 
     const UI = Object.freeze({
         statusTextId: 'cloud-status-text',
@@ -34,8 +34,8 @@
 
     function ensureClientId() {
         try {
-            const key = 'unimanager_firebase_client_id';
-            const existing = localStorage.getItem(key);
+            const key = 'tollab_client';
+            let existing = localStorage.getItem(key);
             if (existing) return existing;
             const fresh = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
             localStorage.setItem(key, fresh);
@@ -129,51 +129,60 @@
             const key = STORAGE_KEYS.DATA_PREFIX + p.id;
             const raw = localStorage.getItem(key);
             const parsed = raw ? safeJsonParse(raw) : null;
-            const data = parsed && typeof migrateData === 'function' ? migrateData(parsed) : parsed;
-
-            const exportObj = {
-                meta: {
-                    version: typeof EXPORT_DATA_VERSION === 'number' ? EXPORT_DATA_VERSION : 1,
-                    profileName: p.name,
-                    exportDate: new Date().toISOString()
-                },
-                data: data || { semesters: [], settings: { ...DEFAULT_THEME_SETTINGS }, lastModified: new Date().toISOString() }
-            };
-
-            const lastModified = exportObj?.data?.lastModified || null;
+            
+            // Get hydrated data for lastModified, then compact for storage
+            const hydrated = parsed ? (typeof hydrateFromStorage === 'function' ? hydrateFromStorage(parsed) : parsed) : null;
+            const compactData = hydrated && typeof compactForStorage === 'function' 
+                ? compactForStorage(hydrated) 
+                : parsed;
 
             return {
-                id: p.id,
-                name: p.name,
-                lastModified,
-                export: exportObj
+                i: p.id,
+                n: p.name,
+                t: hydrated?.lastModified || null,
+                d: compactData
             };
         });
 
         return {
-            version: CLOUD_PAYLOAD_VERSION,
-            updatedAt: new Date().toISOString(),
-            activeProfileId: activeId,
-            profiles: items
+            v: CLOUD_PAYLOAD_VERSION,
+            u: new Date().toISOString(),
+            a: activeId,
+            p: items
         };
     }
 
     function normalizeCloudPayload(payload) {
         if (!payload || typeof payload !== 'object') {
             return {
-                version: CLOUD_PAYLOAD_VERSION,
-                updatedAt: new Date().toISOString(),
-                activeProfileId: null,
-                profiles: []
+                v: CLOUD_PAYLOAD_VERSION,
+                u: new Date().toISOString(),
+                a: null,
+                p: []
             };
         }
 
-        const profiles = Array.isArray(payload.profiles) ? payload.profiles : [];
+        // Handle legacy format (v1)
+        if (payload.version && !payload.v) {
+            return {
+                v: CLOUD_PAYLOAD_VERSION,
+                u: payload.updatedAt || new Date().toISOString(),
+                a: payload.activeProfileId || null,
+                p: (payload.profiles || []).map(p => ({
+                    i: p.id,
+                    n: p.name,
+                    t: p.lastModified || p.export?.data?.lastModified,
+                    d: p.export?.data ? (typeof compactForStorage === 'function' ? compactForStorage(p.export.data) : p.export.data) : null
+                }))
+            };
+        }
+
+        const profiles = Array.isArray(payload.p) ? payload.p : [];
         return {
-            version: typeof payload.version === 'number' ? payload.version : CLOUD_PAYLOAD_VERSION,
-            updatedAt: payload.updatedAt || new Date().toISOString(),
-            activeProfileId: payload.activeProfileId || null,
-            profiles
+            v: typeof payload.v === 'number' ? payload.v : CLOUD_PAYLOAD_VERSION,
+            u: payload.u || new Date().toISOString(),
+            a: payload.a || null,
+            p: profiles
         };
     }
 
@@ -196,108 +205,86 @@
         const takenNames = new Set();
         const byId = new Map();
 
-        for (const lp of local.profiles) {
-            if (!lp || !lp.id) continue;
-            const name = (lp.name || 'Profile').trim();
+        for (const lp of local.p) {
+            if (!lp || !lp.i) continue;
+            const name = (lp.n || 'Profile').trim();
             takenNames.add(name);
-            byId.set(lp.id, { ...lp, name });
+            byId.set(lp.i, { ...lp, n: name });
         }
 
-        for (const cpRaw of cloud.profiles) {
-            if (!cpRaw || !cpRaw.id) continue;
+        for (const cpRaw of cloud.p) {
+            if (!cpRaw || !cpRaw.i) continue;
 
-            const existing = byId.get(cpRaw.id);
+            const existing = byId.get(cpRaw.i);
             const cp = { ...cpRaw };
-            cp.name = (cp.name || cp.export?.meta?.profileName || 'Profile').trim();
-            cp.lastModified = cp.lastModified || cp.export?.data?.lastModified || null;
+            cp.n = (cp.n || 'Profile').trim();
 
             if (existing) {
-                const localNewer = compareIso(existing.lastModified, cp.lastModified) >= 0;
+                const localNewer = compareIso(existing.t, cp.t) >= 0;
                 const chosen = localNewer ? existing : cp;
 
-                // Name resolution: pick name from the chosen record, then ensure uniqueness.
-                const desired = (chosen.name || 'Profile').trim();
+                const desired = (chosen.n || 'Profile').trim();
                 let finalName = desired;
 
-                // If the chosen name collides with some other profile name, make it unique.
-                // (Keep the current profile's existing name reserved.)
-                if (finalName !== existing.name && takenNames.has(finalName)) {
+                if (finalName !== existing.n && takenNames.has(finalName)) {
                     finalName = makeNameUnique(finalName, takenNames);
-                    console.debug(LOG, 'Name collision on merge (same id). Renaming:', desired, '=>', finalName);
+                    console.debug(LOG, 'Name collision on merge. Renaming:', desired, '=>', finalName);
                 }
 
-                byId.set(cp.id, {
+                byId.set(cp.i, {
                     ...chosen,
-                    name: finalName,
-                    export: chosen.export || existing.export || cp.export
+                    n: finalName,
+                    d: chosen.d || existing.d || cp.d
                 });
 
-                if (byId.get(cp.id)?.export?.meta) {
-                    byId.get(cp.id).export.meta.profileName = finalName;
-                }
                 takenNames.add(finalName);
                 continue;
             }
 
-            // New profile from cloud: avoid name collisions against local.
-            const uniqueName = makeNameUnique(cp.name, takenNames);
-            if (uniqueName !== cp.name) {
-                console.debug(LOG, 'Name collision on merge. Renaming cloud profile:', cp.name, '=>', uniqueName);
-            }
-            if (cp.export?.meta) {
-                cp.export.meta.profileName = uniqueName;
+            // New profile from cloud
+            const uniqueName = makeNameUnique(cp.n, takenNames);
+            if (uniqueName !== cp.n) {
+                console.debug(LOG, 'Name collision on merge. Renaming cloud profile:', cp.n, '=>', uniqueName);
             }
             takenNames.add(uniqueName);
-            byId.set(cp.id, {
-                ...cp,
-                name: uniqueName,
-                export: cp.export
-            });
+            byId.set(cp.i, { ...cp, n: uniqueName });
         }
 
         const mergedProfiles = Array.from(byId.values());
 
-        // Choose active profile: prefer local if valid, else cloud, else first.
-        let mergedActive = local.activeProfileId;
+        let mergedActive = local.a;
         if (!mergedActive || !byId.has(mergedActive)) {
-            mergedActive = cloud.activeProfileId;
+            mergedActive = cloud.a;
         }
         if (!mergedActive || !byId.has(mergedActive)) {
-            mergedActive = mergedProfiles[0]?.id || 'default';
+            mergedActive = mergedProfiles[0]?.i || 'default';
         }
 
-        const merged = {
-            version: CLOUD_PAYLOAD_VERSION,
-            updatedAt: new Date().toISOString(),
-            activeProfileId: mergedActive,
-            profiles: mergedProfiles
+        return {
+            v: CLOUD_PAYLOAD_VERSION,
+            u: new Date().toISOString(),
+            a: mergedActive,
+            p: mergedProfiles
         };
-
-        return merged;
     }
 
     function writeMergedToLocalStorage(mergedPayload) {
         const merged = normalizeCloudPayload(mergedPayload);
 
-        const profileList = merged.profiles.map(p => ({ id: p.id, name: p.name }));
+        const profileList = merged.p.map(p => ({ id: p.i, name: p.n }));
         localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profileList));
 
-        if (merged.activeProfileId) {
-            localStorage.setItem(STORAGE_KEYS.ACTIVE_PROFILE, merged.activeProfileId);
+        if (merged.a) {
+            localStorage.setItem(STORAGE_KEYS.ACTIVE_PROFILE, merged.a);
         }
 
-        for (const p of merged.profiles) {
-            if (!p || !p.id) continue;
-            const exportObj = p.export;
-            const data = exportObj?.data || null;
+        for (const p of merged.p) {
+            if (!p || !p.i) continue;
+            const data = p.d;
             if (!data || typeof data !== 'object') continue;
 
-            if (exportObj?.meta) {
-                exportObj.meta.profileName = p.name;
-            }
-
-            const migrated = typeof migrateData === 'function' ? migrateData(data) : data;
-            localStorage.setItem(STORAGE_KEYS.DATA_PREFIX + p.id, JSON.stringify(migrated));
+            // Store compact data directly
+            localStorage.setItem(STORAGE_KEYS.DATA_PREFIX + p.i, JSON.stringify(data));
         }
     }
 
@@ -306,11 +293,11 @@
         try {
             const p = normalizeCloudPayload(payload);
             const parts = [];
-            parts.push(`v=${p.version}`);
-            parts.push(`active=${p.activeProfileId || ''}`);
-            const sorted = [...p.profiles].filter(x => x && x.id).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+            parts.push(`v=${p.v}`);
+            parts.push(`active=${p.a || ''}`);
+            const sorted = [...p.p].filter(x => x && x.i).sort((a, b) => String(a.i).localeCompare(String(b.i)));
             for (const prof of sorted) {
-                parts.push(`${prof.id}|${prof.name || ''}|${prof.lastModified || ''}`);
+                parts.push(`${prof.i}|${prof.n || ''}|${prof.t || ''}`);
             }
             return parts.join('\n');
         } catch {
@@ -337,10 +324,10 @@
         lastLocalWriteId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
         const record = {
-            version: CLOUD_PAYLOAD_VERSION,
-            updatedAt: new Date().toISOString(),
-            writeId: lastLocalWriteId,
-            originClientId: clientId,
+            v: CLOUD_PAYLOAD_VERSION,
+            u: new Date().toISOString(),
+            w: lastLocalWriteId,
+            c: clientId,
             payload
         };
 

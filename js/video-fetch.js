@@ -134,8 +134,7 @@ function addFetchedVideos(videos, useOriginalNames) {
             name,
             videoLink: video.url,
             slideLink: '',
-            watched: false,
-            liked: false
+            watched: false
         });
     });
     

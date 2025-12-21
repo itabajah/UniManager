@@ -1,5 +1,5 @@
 /**
- * @fileoverview Utility functions for the Uni Course Manager application.
+ * @fileoverview Utility functions for the Tollab application.
  * Pure helper functions with no side effects.
  */
 

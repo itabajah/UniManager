@@ -122,8 +122,7 @@ function addRecording() {
         name: defaultName, 
         videoLink: link, 
         slideLink: '',
-        watched: false, 
-        liked: false 
+        watched: false
     });
 
     input.value = '';
@@ -192,23 +191,7 @@ function toggleRecordingStatus(courseId, tabId, index) {
     renderCourses(); // Update course card progress
 }
 
-/**
- * Toggles the liked status of a recording.
- * @param {string} courseId - Course ID
- * @param {string} tabId - Tab ID
- * @param {number} index - Recording index
- */
-function toggleRecordingLike(courseId, tabId, index) {
-    const course = getCourse(courseId);
-    if (!course) return;
-    
-    const tab = getRecordingTab(course, tabId);
-    if (!tab?.items[index]) return;
-    
-    tab.items[index].liked = !tab.items[index].liked;
-    saveData();
-    renderRecordingsList(course);
-}
+
 
 /**
  * Deletes a recording after confirmation.

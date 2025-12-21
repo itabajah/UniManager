@@ -1,5 +1,5 @@
 /**
- * @fileoverview Theme management for the Uni Course Manager application.
+ * @fileoverview Theme management for the Tollab application.
  * Handles dark/light mode and course color themes.
  */
 

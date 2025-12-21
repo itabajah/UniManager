@@ -42,7 +42,7 @@ window.openHomeworkModal = openHomeworkModal;
 // Recording functions
 window.switchRecordingsTab = switchRecordingsTab;
 window.toggleRecordingStatus = toggleRecordingStatus;
-window.toggleRecordingLike = toggleRecordingLike;
+
 window.toggleRecordingEdit = toggleRecordingEdit;
 window.saveRecordingEdit = saveRecordingEdit;
 window.cancelRecordingEdit = cancelRecordingEdit;
