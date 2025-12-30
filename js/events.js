@@ -370,6 +370,22 @@ function setupHomeworkEvents() {
         saveData();
         renderHomeworkSidebar();
     });
+    
+    // Mobile scroll to homework button
+    const scrollBtn = $('scroll-to-homework-btn');
+    if (scrollBtn) {
+        scrollBtn.addEventListener('click', scrollToHomeworkSection);
+    }
+}
+
+/**
+ * Scrolls to the homework section on mobile.
+ */
+function scrollToHomeworkSection() {
+    const homeworkSection = $('homework-sidebar-list');
+    if (homeworkSection) {
+        homeworkSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // ============================================================================

@@ -1,6 +1,44 @@
 /**
  * @file header-ticker.js
  * @description Header ticker (fun reminders) logic and message templates.
+ * 
+ * CONTEXT RULES FOR EACH CATEGORY:
+ * ================================
+ * 
+ * no_semester: Shows only when no semester is selected
+ * no_courses: Shows only when semester exists but has no courses
+ * no_schedule: Shows only when courses exist but none have schedule slots
+ * no_classes_today: Shows only when schedule exists but no classes today (not late night)
+ * all_clear: Shows only when all homework done, no exams soon, recordings caught up
+ * 
+ * late_night: Shows only 11pm-4am (23:00-04:00)
+ * morning: Shows only 5am-10am (05:00-10:00) 
+ * weekend: Shows only Friday evening (after 5pm), Saturday, or Sunday (before 6pm)
+ * 
+ * class_now: Shows only when a class is currently in session (within 5min buffer)
+ * class_soon: Shows only when class starts within next 15 minutes
+ * class_next: Shows only when class is scheduled later today (>15min away)
+ * class_tomorrow: Shows only when no more classes today but one tomorrow
+ * 
+ * hw_overdue: Shows only when there's an incomplete homework past due date
+ * hw_today: Shows only when incomplete homework due today
+ * hw_tomorrow: Shows only when incomplete homework due tomorrow
+ * hw_soon: Shows only when incomplete homework due within 7 days
+ * hw_nodate: Shows only when incomplete homework has no due date set
+ * hw_many: Shows only when 6+ incomplete homeworks exist
+ * hw_all_done: Shows only when ALL homework is completed (and at least 1 exists)
+ * 
+ * exam_today: Shows only on exam day
+ * exam_tomorrow: Shows only day before exam
+ * exam_soon: Shows only when exam is within 3 days
+ * exam: Shows only when exam is within 14 days (but not today/tomorrow/soon)
+ * 
+ * recordings_big: Shows only when 10+ unwatched recordings in a course
+ * recordings_backlog: Shows only when 1-9 unwatched recordings in a course
+ * recordings_clear: Shows only when all recordings are watched (and at least 1 exists)
+ * 
+ * general: Always can show as filler, low priority
+ * general_course_roast: Shows only when at least one course exists
  */
 
 'use strict';
@@ -269,12 +307,17 @@ let headerTickerLastOrderSignature = '';
 let headerTickerMessageSeed = '';
 let headerTickerLastDisplayedKey = '';
 let headerTickerDisplayCounter = 0;
+let headerTickerLastRotationTime = 0;
 
 // Tracks how many times a specific item key has been shown (for cycling templates).
 const headerTickerShownCountByKey = new Map();
 
 // Cache for deterministic per-day template shuffle bags.
 const headerTickerTemplateBagCache = new Map();
+
+// Track recently shown items to avoid immediate repeats
+const headerTickerRecentItems = [];
+const HEADER_TICKER_RECENT_LIMIT = 5;
 
 const HEADER_TICKER_ROTATE_MS = 9000;
 
@@ -336,28 +379,60 @@ function stopHeaderTickerRotation() {
 function rotateHeaderTicker() {
     if (!Array.isArray(headerTickerItems) || headerTickerItems.length <= 1) return;
 
+    // Track rotation time for better variety
+    headerTickerLastRotationTime = Date.now();
+
     if (!Array.isArray(headerTickerOrder) || headerTickerOrder.length === 0) {
         rebuildHeaderTickerOrder({ avoidIndex: headerTickerIndex });
     }
 
-    // Avoid immediate repeat when possible
-    if (headerTickerItems.length > 1 && headerTickerOrder.length > 0 && headerTickerOrder[0] === headerTickerIndex) {
-        const swapIdx = headerTickerOrder.findIndex(i => i !== headerTickerIndex);
-        if (swapIdx > 0) {
-            const tmp = headerTickerOrder[0];
-            headerTickerOrder[0] = headerTickerOrder[swapIdx];
-            headerTickerOrder[swapIdx] = tmp;
+    // Get the current item's key before rotating
+    const currentKey = headerTickerItems[headerTickerIndex]?.key;
+    
+    // Add current item to recent items list
+    if (currentKey) {
+        headerTickerRecentItems.unshift(currentKey);
+        if (headerTickerRecentItems.length > HEADER_TICKER_RECENT_LIMIT) {
+            headerTickerRecentItems.pop();
         }
     }
 
-    headerTickerIndex = headerTickerOrder.length ? headerTickerOrder.shift() : ((headerTickerIndex + 1) % headerTickerItems.length);
+    // Find next item that isn't in recent items list (if possible)
+    let nextIndex = null;
+    for (let i = 0; i < headerTickerOrder.length; i++) {
+        const candidateIndex = headerTickerOrder[i];
+        const candidateKey = headerTickerItems[candidateIndex]?.key;
+        if (!headerTickerRecentItems.includes(candidateKey)) {
+            nextIndex = candidateIndex;
+            headerTickerOrder.splice(i, 1);
+            break;
+        }
+    }
+    
+    // Fallback if all items are recent
+    if (nextIndex === null) {
+        nextIndex = headerTickerOrder.length ? headerTickerOrder.shift() : ((headerTickerIndex + 1) % headerTickerItems.length);
+    }
+
+    headerTickerIndex = nextIndex;
     renderHeaderTickerCurrent(true);
 }
 
 function rebuildHeaderTickerOrder(options) {
     const n = Array.isArray(headerTickerItems) ? headerTickerItems.length : 0;
     headerTickerOrder = [];
-    for (let i = 0; i < n; i++) headerTickerOrder.push(i);
+    
+    // Build weighted order - higher priority items appear more frequently
+    for (let i = 0; i < n; i++) {
+        const item = headerTickerItems[i];
+        const priority = item?.priority || 1;
+        
+        // Add each item multiple times based on priority (capped at 3)
+        const weight = Math.min(priority, 3);
+        for (let w = 0; w < weight; w++) {
+            headerTickerOrder.push(i);
+        }
+    }
 
     const avoidIndex = options && Number.isInteger(options.avoidIndex) ? options.avoidIndex : null;
 
@@ -368,7 +443,7 @@ function rebuildHeaderTickerOrder(options) {
         shuffleInPlace(headerTickerOrder);
 
         // Avoid starting with the currently visible item when possible.
-        if (avoidIndex !== null && n > 1 && headerTickerOrder[0] === avoidIndex) {
+        if (avoidIndex !== null && headerTickerOrder.length > 1 && headerTickerOrder[0] === avoidIndex) {
             const swapIdx = headerTickerOrder.findIndex(i => i !== avoidIndex);
             if (swapIdx > 0) {
                 const tmp = headerTickerOrder[0];
@@ -378,7 +453,7 @@ function rebuildHeaderTickerOrder(options) {
         }
 
         const sig = headerTickerOrder.join(',');
-        if (n <= 2 || sig !== headerTickerLastOrderSignature) {
+        if (headerTickerOrder.length <= 2 || sig !== headerTickerLastOrderSignature) {
             headerTickerLastOrderSignature = sig;
             break;
         }
@@ -517,7 +592,8 @@ function buildHeaderTickerItems() {
             kind: 'info',
             badge: 'SETUP',
             templateCategory: 'no_semester',
-            templateVars: {}
+            templateVars: {},
+            priority: 1
         }];
     }
 
@@ -527,13 +603,15 @@ function buildHeaderTickerItems() {
             kind: 'info',
             badge: 'SETUP',
             templateCategory: 'no_courses',
-            templateVars: {}
+            templateVars: {},
+            priority: 1
         }];
     }
 
     const now = new Date();
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
+    const hour = now.getHours();
 
     const messageSeed = getHeaderTickerMessageSeed(now);
     headerTickerMessageSeed = messageSeed;
@@ -542,15 +620,24 @@ function buildHeaderTickerItems() {
 
     const hasScheduleAtAll = hasAnySchedule(semester);
 
-    // 1) Classes: current + next
+    // 1) Classes: current + next (HIGHEST PRIORITY)
     const { currentClass, nextClass } = findCurrentAndNextClass(semester, now);
-    if (currentClass) items.push(currentClass);
-    if (nextClass) items.push(nextClass);
+    if (currentClass) {
+        currentClass.priority = 10; // Highest priority
+        items.push(currentClass);
+    }
+    if (nextClass) {
+        nextClass.priority = 9;
+        items.push(nextClass);
+    }
 
     // 1.5) Classes: tomorrow (only when there isn't another class later today)
     if (!currentClass && !nextClass) {
         const tomorrowClass = collectTomorrowFirstClass(semester, now);
-        if (tomorrowClass) items.push(tomorrowClass);
+        if (tomorrowClass) {
+            tomorrowClass.priority = 4;
+            items.push(tomorrowClass);
+        }
     }
 
     // 1.75) If there is no schedule at all, surface that (and don't spam "no classes today")
@@ -560,29 +647,45 @@ function buildHeaderTickerItems() {
             kind: 'info',
             badge: 'SETUP',
             templateCategory: 'no_schedule',
-            templateVars: {}
+            templateVars: {},
+            priority: 2
         });
     }
 
     // 2) Homework: take up to 2 most urgent incomplete items with a due date
     const homeworkItems = collectHomeworkTickerItems(semester, todayStart, messageSeed, 2);
+    homeworkItems.forEach((hw, idx) => {
+        hw.priority = 8 - idx; // High priority for homework
+    });
     items.push(...homeworkItems.slice(0, 2));
 
     // 2.5) Homework volume nudge (when there is a pile)
     const hwMany = collectHomeworkVolumeNudge(semester);
-    if (hwMany) items.push(hwMany);
+    if (hwMany) {
+        hwMany.priority = 5;
+        items.push(hwMany);
+    }
 
-    // 3) Exams: take the soonest upcoming exam (A/B)
+    // 3) Exams: take the soonest upcoming exam (A/B) - VERY HIGH PRIORITY
     const examItems = collectExamTickerItems(semester, todayStart, messageSeed, 1);
+    examItems.forEach(exam => {
+        exam.priority = 9; // Very high priority for exams
+    });
     items.push(...examItems);
 
     // 4) Homework without due date (nudge to set one)
     const noDateHw = collectHomeworkWithoutDueDate(semester);
-    if (noDateHw) items.push(noDateHw);
+    if (noDateHw) {
+        noDateHw.priority = 3;
+        items.push(noDateHw);
+    }
 
     // 5) Recordings backlog (pick the course with the biggest backlog)
     const recordingsBacklog = collectRecordingsBacklog(semester);
-    if (recordingsBacklog) items.push(recordingsBacklog);
+    if (recordingsBacklog) {
+        recordingsBacklog.priority = 4;
+        items.push(recordingsBacklog);
+    }
 
     // 5.5) Positive states (only when there isn't anything actionable to show)
     const hasAnyUrgentHw = homeworkItems.length > 0 || !!noDateHw || !!hwMany;
@@ -591,68 +694,85 @@ function buildHeaderTickerItems() {
 
     if (!currentClass && !nextClass && !hasAnyUrgentHw && !hasAnyExam && !hasAnyRecordingBacklog) {
         const hwAllDone = collectHomeworkAllDone(semester);
-        if (hwAllDone) items.push(hwAllDone);
+        if (hwAllDone) {
+            hwAllDone.priority = 2;
+            items.push(hwAllDone);
+        }
 
         const recordingsClear = collectRecordingsAllCaughtUp(semester);
-        if (recordingsClear) items.push(recordingsClear);
+        if (recordingsClear) {
+            recordingsClear.priority = 2;
+            items.push(recordingsClear);
+        }
     }
 
     // 6) If there are no classes later today and none right now, say so
-    if (hasScheduleAtAll && !currentClass && !nextClass && !hasAnyClassToday(semester, now.getDay())) {
+    // Don't show during late night hours (11pm-6am) as it's not useful then
+    const isLateNight = hour >= 23 || hour < 6;
+    if (hasScheduleAtAll && !currentClass && !nextClass && !hasAnyClassToday(semester, now.getDay()) && !isLateNight) {
         items.push({
             key: 'no_classes_today',
             kind: 'info',
             badge: 'FREE',
             templateCategory: 'no_classes_today',
-            templateVars: {}
+            templateVars: {},
+            priority: 3
         });
     }
 
-    // 7) Time-based vibes (only when nothing actionable is showing)
+    // 7) Time-based vibes (only when nothing urgent is showing and time is appropriate)
     const hasActionable = items.some(it => ['class', 'homework', 'exam', 'recordings'].includes(it?.kind));
-    if (!hasActionable) {
-        const hour = now.getHours();
+    const hasUrgentItems = items.filter(i => i.priority >= 7).length > 0;
+    
+    // Only add time-based messages when there are no urgent actionable items
+    if (!hasUrgentItems) {
+        const day = now.getDay();
         const timeStr = String(hour).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
 
-        // Add at most ONE vibe message to avoid noise
-        const day = now.getDay();
-        let vibe = null;
-
+        // Add time-based messages only when they're actually relevant
+        // Late night: only between 11pm and 4am
         if (hour >= 23 || hour <= 4) {
-            vibe = {
-                key: `late_night:${timeStr}`,
+            items.push({
+                key: `late_night:${hour}`,
                 kind: 'info',
                 badge: 'ZZZ',
                 templateCategory: 'late_night',
-                templateVars: { time: timeStr }
-            };
-        } else if (day === 5 || day === 6) {
-            vibe = {
-                key: 'weekend',
+                templateVars: { time: timeStr },
+                priority: 3 // Slightly higher priority during late night
+            });
+        }
+        // Weekend: only on Friday evening (5pm+), all Saturday, Sunday until 6pm
+        else if (day === 6 || (day === 5 && hour >= 17) || (day === 0 && hour < 18)) {
+            items.push({
+                key: `weekend:${day}`,
                 kind: 'info',
                 badge: 'WEEKEND',
                 templateCategory: 'weekend',
-                templateVars: {}
-            };
-        } else if (hour < 10) {
-            vibe = {
-                key: 'morning',
+                templateVars: {},
+                priority: 2
+            });
+        }
+        // Morning: only between 5am and 10am (not late night, not too late in morning)
+        else if (hour >= 5 && hour < 10) {
+            items.push({
+                key: `morning:${hour}`,
                 kind: 'info',
                 badge: 'AM',
                 templateCategory: 'morning',
-                templateVars: {}
-            };
+                templateVars: {},
+                priority: 1
+            });
         }
-
-        if (vibe) items.push(vibe);
     }
 
-    // 8) Always-relevant general fillers (kept low-priority so they don't drown urgent stuff)
-    // Always include them so the category is reachable in rotation.
-    // Add at most 1 when there are actionable items; add up to 2 when things are quiet.
-    const general = collectGeneralAlwaysItems(semester, now, messageSeed);
-    if (general.length > 0) {
-        const maxGeneral = hasActionable ? 1 : 2;
+    // 8) General fillers - only when not much else is showing
+    // Don't add if we already have good actionable items
+    const needFillers = items.length < 3;
+    if (needFillers && semester.courses && semester.courses.length > 0) {
+        const general = collectGeneralAlwaysItems(semester, now, messageSeed);
+        general.forEach(g => { g.priority = 1; });
+        // Only add 1 general item if we have some items, 2 if very few
+        const maxGeneral = items.length === 0 ? 2 : 1;
         items.push(...general.slice(0, maxGeneral));
     }
 
@@ -677,9 +797,13 @@ function buildHeaderTickerItems() {
             kind: 'info',
             badge: 'OK',
             templateCategory: 'all_clear',
-            templateVars: {}
+            templateVars: {},
+            priority: 1
         }];
     }
+
+    // Sort by priority (higher first) to ensure important items are shown more often
+    deduped.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     return deduped;
 }
@@ -840,11 +964,15 @@ function collectHomeworkTickerItems(semester, todayStart, seed, maxItems) {
             dueStart.setHours(0, 0, 0, 0);
             const diffDays = Math.ceil((dueStart - todayStart) / (1000 * 60 * 60 * 24));
 
+            // Only show hw_soon for homework due within 7 days (not too far out)
             const category = diffDays < 0
                 ? 'hw_overdue'
-                : (diffDays === 0 ? 'hw_today' : (diffDays === 1 ? 'hw_tomorrow' : 'hw_soon'));
+                : (diffDays === 0 ? 'hw_today' : (diffDays === 1 ? 'hw_tomorrow' : (diffDays <= 7 ? 'hw_soon' : null)));
 
-            const badge = diffDays < 0 ? 'HW!' : 'HW';
+            // Skip homework more than 7 days away - not urgent enough for ticker
+            if (category === null) return;
+
+            const badge = diffDays < 0 ? 'HW!' : (diffDays <= 1 ? 'HW!!' : 'HW');
             const key = `hw:${course.id}:${hwIndex}:${hw.dueDate}`;
 
             all.push({
@@ -950,12 +1078,22 @@ function collectUpcomingExamItems(semester, todayStart) {
             examStart.setHours(0, 0, 0, 0);
 
             const diffDays = Math.ceil((examStart - todayStart) / (1000 * 60 * 60 * 24));
+            
+            // Skip past exams
             if (diffDays < 0) continue;
+            
+            // Skip exams more than 14 days away - not urgent enough for ticker
+            if (diffDays > 14) continue;
 
-            const badge = diffDays <= 1 ? 'EXAM!!' : (diffDays <= 7 ? 'EXAM!' : 'EXAM');
+            // Set badge based on urgency
+            const badge = diffDays === 0 ? 'EXAM!!' : (diffDays === 1 ? 'EXAM!' : (diffDays <= 3 ? 'EXAM!' : 'EXAM'));
             const prettyDate = dateFormatter.format(examStart);
 
-            const category = diffDays === 0 ? 'exam_today' : (diffDays === 1 ? 'exam_tomorrow' : (diffDays <= 3 ? 'exam_soon' : 'exam'));
+            // Set category based on how soon the exam is
+            const category = diffDays === 0 ? 'exam_today' 
+                : (diffDays === 1 ? 'exam_tomorrow' 
+                : (diffDays <= 3 ? 'exam_soon' 
+                : 'exam'));
 
             items.push({
                 key: `exam:${course.id}:${c.examType}:${c.dateStr}`,
@@ -1206,9 +1344,11 @@ function stablePickOne(arr, seed) {
 
 function getHeaderTickerMessageSeed(now) {
     const d = now instanceof Date ? now : new Date();
-    // Rotate selection + template choice every 30 minutes (stable within the window to avoid renderAll jitter).
-    const bucket = Math.floor(d.getTime() / (1000 * 60 * 30));
-    return `${getLocalYMD(d)}|${bucket}`;
+    // Rotate selection + template choice every 15 minutes for more variety
+    // Also include hour to make messages more dynamic throughout the day
+    const bucket = Math.floor(d.getTime() / (1000 * 60 * 15));
+    const hourBucket = d.getHours();
+    return `${getLocalYMD(d)}|${bucket}|${hourBucket}`;
 }
 
 // ============================================================================

@@ -207,6 +207,8 @@
 
         for (const lp of local.p) {
             if (!lp || !lp.i) continue;
+            // Skip empty profiles during merge
+            if (isEmptyProfile(lp)) continue;
             const name = (lp.n || 'Profile').trim();
             takenNames.add(name);
             byId.set(lp.i, { ...lp, n: name });
@@ -214,6 +216,8 @@
 
         for (const cpRaw of cloud.p) {
             if (!cpRaw || !cpRaw.i) continue;
+            // Skip empty profiles during merge
+            if (isEmptyProfile(cpRaw)) continue;
 
             const existing = byId.get(cpRaw.i);
             const cp = { ...cpRaw };
@@ -266,6 +270,37 @@
             a: mergedActive,
             p: mergedProfiles
         };
+    }
+
+    /**
+     * Checks if a profile is "empty" (has no semesters).
+     * An empty profile is one that has no meaningful data - just default state.
+     * This is used during merge to avoid adding empty default profiles to existing accounts.
+     * @param {Object} profile - Profile object with d (data) property
+     * @returns {boolean} True if the profile is considered empty
+     */
+    function isEmptyProfile(profile) {
+        if (!profile) return true;
+        const data = profile.d;
+        
+        // No data at all means empty
+        if (!data || typeof data !== 'object') return true;
+        
+        // In compact format (v2):
+        // - semesters are in 'd' array (confusingly named, stands for "data" inside compact)
+        // In hydrated format:
+        // - semesters are in 'semesters' array
+        // In old compact format:
+        // - semesters might be in 's' array
+        
+        const semesters = data.d || data.semesters || data.s;
+        
+        // If semesters array doesn't exist or is empty, profile is empty
+        if (!Array.isArray(semesters) || semesters.length === 0) {
+            return true;
+        }
+        
+        return false;
     }
 
     function writeMergedToLocalStorage(mergedPayload) {

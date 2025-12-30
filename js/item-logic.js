@@ -778,6 +778,259 @@ function openHomeworkFromSidebar(courseId, hwIndex) {
 }
 
 // ============================================================================
+// SORT FUNCTIONS
+// ============================================================================
+
+/**
+ * Gets the sort order for recordings in a course.
+ * @param {Object} course - Course object
+ * @param {string} tabId - Tab ID
+ * @returns {string} Sort order
+ */
+function getRecordingsSortOrder(course, tabId) {
+    return course.recordingsSortOrder?.[tabId] || SORT_ORDERS.recordings.DEFAULT;
+}
+
+/**
+ * Gets the sort order for homework in a course.
+ * @param {Object} course - Course object
+ * @returns {string} Sort order
+ */
+function getHomeworkSortOrder(course) {
+    return course.homeworkSortOrder || SORT_ORDERS.homework.DATE_ASC;
+}
+
+/**
+ * Sets the sort order for recordings and re-renders.
+ * @param {string} courseId - Course ID
+ * @param {string} tabId - Tab ID
+ * @param {string} order - Sort order
+ */
+function setRecordingsSortOrder(courseId, tabId, order) {
+    const course = getCourse(courseId);
+    if (!course) return;
+    
+    if (!course.recordingsSortOrder) {
+        course.recordingsSortOrder = {};
+    }
+    course.recordingsSortOrder[tabId] = order;
+    
+    saveData();
+    renderRecordingsList(course);
+}
+
+/**
+ * Sets the sort order for homework and re-renders.
+ * @param {string} courseId - Course ID
+ * @param {string} order - Sort order
+ */
+function setHomeworkSortOrder(courseId, order) {
+    const course = getCourse(courseId);
+    if (!course) return;
+    
+    course.homeworkSortOrder = order;
+    
+    saveData();
+    renderHomeworkList(course);
+}
+
+/**
+ * Toggles the show completed homework setting for a course.
+ * @param {string} courseId - Course ID
+ */
+function toggleShowCompletedHomework(courseId) {
+    const course = getCourse(courseId);
+    if (!course) return;
+    
+    // Get current state: default is true (show completed)
+    const currentlyShowing = course.showCompletedHomework !== false;
+    
+    // Toggle to opposite state
+    if (currentlyShowing) {
+        // Currently showing, so hide them
+        course.showCompletedHomework = false;
+    } else {
+        // Currently hiding, so show them (delete to use default true)
+        delete course.showCompletedHomework;
+    }
+    
+    saveData();
+    renderHomeworkList(course);
+}
+
+/**
+ * Extracts numeric value from a string for natural sorting.
+ * "Recording 12" -> 12, "Lecture 5" -> 5, "Video 100" -> 100
+ * @param {string} str - String to extract number from
+ * @returns {number} Extracted number or Infinity if no number found
+ */
+function extractNumber(str) {
+    if (!str) return Infinity;
+    // Match numbers in the string, prefer trailing numbers like "Recording 12"
+    const matches = str.match(/(\d+)/g);
+    if (matches && matches.length > 0) {
+        // Use the last number found (e.g., "Lecture 12" -> 12)
+        return parseInt(matches[matches.length - 1], 10);
+    }
+    return Infinity;
+}
+
+/**
+ * Sorts recordings based on the selected order.
+ * @param {Array} items - Recording items array
+ * @param {string} order - Sort order
+ * @returns {Array} Sorted items with original indices
+ */
+function sortRecordings(items, order) {
+    if (!Array.isArray(items)) return [];
+    
+    // Create array with original indices
+    const indexed = items.map((item, idx) => ({ item, originalIndex: idx }));
+    
+    switch (order) {
+        case SORT_ORDERS.recordings.DEFAULT:
+            // Natural numeric sort: "Recording 5" comes before "Recording 12"
+            indexed.sort((a, b) => {
+                const numA = extractNumber(a.item.name);
+                const numB = extractNumber(b.item.name);
+                if (numA !== numB) return numA - numB;
+                // If numbers are equal or both have no numbers, sort alphabetically
+                return (a.item.name || '').localeCompare(b.item.name || '');
+            });
+            break;
+        case SORT_ORDERS.recordings.NAME_ASC:
+            indexed.sort((a, b) => (a.item.name || '').localeCompare(b.item.name || ''));
+            break;
+        case SORT_ORDERS.recordings.NAME_DESC:
+            indexed.sort((a, b) => (b.item.name || '').localeCompare(a.item.name || ''));
+            break;
+        case SORT_ORDERS.recordings.WATCHED_FIRST:
+            indexed.sort((a, b) => {
+                if (a.item.watched !== b.item.watched) return a.item.watched ? -1 : 1;
+                return a.originalIndex - b.originalIndex;
+            });
+            break;
+        case SORT_ORDERS.recordings.UNWATCHED_FIRST:
+            indexed.sort((a, b) => {
+                if (a.item.watched !== b.item.watched) return a.item.watched ? 1 : -1;
+                return a.originalIndex - b.originalIndex;
+            });
+            break;
+        default: // MANUAL - keep original order
+            break;
+    }
+    
+    return indexed;
+}
+
+/**
+ * Sorts homework based on the selected order.
+ * @param {Array} items - Homework items array
+ * @param {string} order - Sort order
+ * @returns {Array} Sorted items with original indices
+ */
+function sortHomework(items, order) {
+    if (!Array.isArray(items)) return [];
+    
+    // Create array with original indices
+    const indexed = items.map((item, idx) => ({ item, originalIndex: idx }));
+    
+    switch (order) {
+        case SORT_ORDERS.homework.DATE_ASC:
+            indexed.sort((a, b) => {
+                if (!a.item.dueDate && !b.item.dueDate) return a.originalIndex - b.originalIndex;
+                if (!a.item.dueDate) return 1;
+                if (!b.item.dueDate) return -1;
+                return new Date(a.item.dueDate) - new Date(b.item.dueDate);
+            });
+            break;
+        case SORT_ORDERS.homework.DATE_DESC:
+            indexed.sort((a, b) => {
+                if (!a.item.dueDate && !b.item.dueDate) return a.originalIndex - b.originalIndex;
+                if (!a.item.dueDate) return 1;
+                if (!b.item.dueDate) return -1;
+                return new Date(b.item.dueDate) - new Date(a.item.dueDate);
+            });
+            break;
+        case SORT_ORDERS.homework.COMPLETED_FIRST:
+            indexed.sort((a, b) => {
+                if (a.item.completed !== b.item.completed) return a.item.completed ? -1 : 1;
+                return a.originalIndex - b.originalIndex;
+            });
+            break;
+        case SORT_ORDERS.homework.INCOMPLETE_FIRST:
+            indexed.sort((a, b) => {
+                if (a.item.completed !== b.item.completed) return a.item.completed ? 1 : -1;
+                return a.originalIndex - b.originalIndex;
+            });
+            break;
+        case SORT_ORDERS.homework.NAME_ASC:
+            indexed.sort((a, b) => (a.item.title || '').localeCompare(b.item.title || ''));
+            break;
+        default: // MANUAL - keep original order
+            break;
+    }
+    
+    return indexed;
+}
+
+/**
+ * Moves a recording item up or down in the list.
+ * @param {string} courseId - Course ID
+ * @param {string} tabId - Tab ID  
+ * @param {number} index - Current index
+ * @param {string} direction - 'up' or 'down'
+ */
+function moveRecording(courseId, tabId, index, direction) {
+    const course = getCourse(courseId);
+    if (!course) return;
+    
+    const tab = getRecordingTab(course, tabId);
+    if (!tab?.items) return;
+    
+    const items = tab.items;
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (newIndex < 0 || newIndex >= items.length) return;
+    
+    // Swap items
+    [items[index], items[newIndex]] = [items[newIndex], items[index]];
+    
+    // Set to manual sort order since user is manually reordering
+    if (!course.recordingsSortOrder) course.recordingsSortOrder = {};
+    course.recordingsSortOrder[tabId] = SORT_ORDERS.recordings.MANUAL;
+    
+    saveData();
+    renderRecordingsList(course);
+}
+
+/**
+ * Moves a homework item up or down in the list.
+ * @param {string} courseId - Course ID
+ * @param {number} index - Current index
+ * @param {string} direction - 'up' or 'down'
+ */
+function moveHomework(courseId, index, direction) {
+    const course = getCourse(courseId);
+    if (!course?.homework) return;
+    
+    const items = course.homework;
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (newIndex < 0 || newIndex >= items.length) return;
+    
+    // Swap items
+    [items[index], items[newIndex]] = [items[newIndex], items[index]];
+    
+    // Set to manual sort order since user is manually reordering
+    course.homeworkSortOrder = SORT_ORDERS.homework.MANUAL;
+    
+    saveData();
+    renderHomeworkList(course);
+    renderHomeworkSidebar();
+}
+
+// ============================================================================
 // SCHEDULE
 // ============================================================================
 

@@ -104,6 +104,13 @@
             <!-- Homework populated by JS -->
         </div>
     </div>
+    
+    <!-- Mobile Scroll to Homework Button -->
+    <button id="scroll-to-homework-btn" title="Scroll to Homework">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
     </div>
 
     <!-- Settings Modal -->
@@ -425,9 +432,9 @@
                     <div id="homework-modal-list" class="lecture-list">
                         <!-- Populated by JS -->
                     </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-primary);">
-                        <input type="text" id="new-homework-name-modal" placeholder="Assignment title..." style="flex-grow: 1;">
-                        <input type="date" id="new-homework-date-modal" style="width: 130px; padding: 8px; border: 1px solid var(--border-secondary); border-radius: 2px; background: var(--bg-secondary); color: var(--text-primary);">
+                    <div class="hw-add-row">
+                        <input type="text" id="new-homework-name-modal" placeholder="Assignment title...">
+                        <input type="date" id="new-homework-date-modal">
                         <button id="add-homework-btn-modal" class="btn-secondary">Add</button>
                     </div>
                 </div>

@@ -6,6 +6,30 @@
 'use strict';
 
 // ============================================================================
+// SORT ORDER OPTIONS
+// ============================================================================
+
+/** @type {Object} Sort order options for recordings and homework */
+const SORT_ORDERS = Object.freeze({
+    recordings: Object.freeze({
+        DEFAULT: 'default',
+        MANUAL: 'manual',
+        NAME_ASC: 'name_asc',
+        NAME_DESC: 'name_desc',
+        WATCHED_FIRST: 'watched_first',
+        UNWATCHED_FIRST: 'unwatched_first'
+    }),
+    homework: Object.freeze({
+        MANUAL: 'manual',
+        DATE_ASC: 'date_asc',
+        DATE_DESC: 'date_desc',
+        COMPLETED_FIRST: 'completed_first',
+        INCOMPLETE_FIRST: 'incomplete_first',
+        NAME_ASC: 'name_asc'
+    })
+});
+
+// ============================================================================
 // CALENDAR SETTINGS
 // ============================================================================
 

@@ -285,34 +285,81 @@ function renderRecordingsList(course, editingIndex = null) {
         return;
     }
     
+    // Add sort controls
+    const sortOrder = getRecordingsSortOrder(course, currentTab.id);
+    const sortControls = createRecordingsSortControls(course.id, currentTab.id, sortOrder);
+    container.appendChild(sortControls);
+    
     const showWatched = $('show-watched-toggle')?.checked !== false;
     let visibleCount = 0;
     
-    currentTab.items.forEach((item, index) => {
+    // Sort recordings
+    const sortedItems = sortRecordings(currentTab.items, sortOrder);
+    
+    sortedItems.forEach(({ item, originalIndex }, displayIndex) => {
         if (!showWatched && item.watched) return;
         visibleCount++;
-        const div = createRecordingItem(item, index, course.id, currentTab.id, editingIndex === index);
+        const div = createRecordingItem(item, originalIndex, course.id, currentTab.id, editingIndex === originalIndex, displayIndex, sortedItems.length, sortOrder);
         container.appendChild(div);
     });
     
     if (visibleCount === 0 && currentTab.items.length > 0) {
-        container.innerHTML = '<div class="recordings-empty">All recordings are done. Enable "Show Done" to see them.</div>';
+        const emptyMsg = document.createElement('div');
+        emptyMsg.className = 'recordings-empty';
+        emptyMsg.textContent = 'All recordings are done. Enable "Show Done" to see them.';
+        container.appendChild(emptyMsg);
     }
+}
+
+/**
+ * Creates sort controls for recordings list.
+ * @param {string} courseId - Course ID
+ * @param {string} tabId - Tab ID
+ * @param {string} currentOrder - Current sort order
+ * @returns {HTMLElement} Sort controls element
+ */
+function createRecordingsSortControls(courseId, tabId, currentOrder) {
+    const div = document.createElement('div');
+    div.className = 'list-sort-controls';
+    div.innerHTML = `
+        <span class="sort-label">Sort:</span>
+        <select class="sort-select" onchange="setRecordingsSortOrder('${courseId}', '${tabId}', this.value)">
+            <option value="${SORT_ORDERS.recordings.DEFAULT}" ${currentOrder === SORT_ORDERS.recordings.DEFAULT ? 'selected' : ''}>Default (by #)</option>
+            <option value="${SORT_ORDERS.recordings.MANUAL}" ${currentOrder === SORT_ORDERS.recordings.MANUAL ? 'selected' : ''}>Manual</option>
+            <option value="${SORT_ORDERS.recordings.NAME_ASC}" ${currentOrder === SORT_ORDERS.recordings.NAME_ASC ? 'selected' : ''}>Name (A-Z)</option>
+            <option value="${SORT_ORDERS.recordings.NAME_DESC}" ${currentOrder === SORT_ORDERS.recordings.NAME_DESC ? 'selected' : ''}>Name (Z-A)</option>
+            <option value="${SORT_ORDERS.recordings.UNWATCHED_FIRST}" ${currentOrder === SORT_ORDERS.recordings.UNWATCHED_FIRST ? 'selected' : ''}>Unwatched First</option>
+            <option value="${SORT_ORDERS.recordings.WATCHED_FIRST}" ${currentOrder === SORT_ORDERS.recordings.WATCHED_FIRST ? 'selected' : ''}>Watched First</option>
+        </select>
+    `;
+    return div;
 }
 
 /**
  * Creates a recording item element.
  * @param {Object} item - Recording item
- * @param {number} index - Item index
+ * @param {number} index - Item index (original index in array)
  * @param {string} courseId - Course ID
  * @param {string} tabId - Tab ID
  * @param {boolean} isEditing - Whether item is being edited
+ * @param {number} displayIndex - Display position in sorted list
+ * @param {number} totalItems - Total number of items
+ * @param {string} sortOrder - Current sort order
  * @returns {HTMLElement} Recording item element
  */
-function createRecordingItem(item, index, courseId, tabId, isEditing) {
+function createRecordingItem(item, index, courseId, tabId, isEditing, displayIndex = 0, totalItems = 1, sortOrder = 'manual') {
     const div = document.createElement('div');
     div.className = `recording-item ${item.watched ? 'watched' : ''}`;
     div.id = `recording-item-${index}`;
+    
+    // Show reorder buttons only in manual mode
+    const isManualSort = sortOrder === SORT_ORDERS.recordings.MANUAL;
+    const reorderButtonsHtml = isManualSort ? `
+        <div class="item-reorder-buttons">
+            <button class="reorder-btn" onclick="event.stopPropagation(); moveRecording('${courseId}', '${tabId}', ${index}, 'up')" ${displayIndex === 0 ? 'disabled' : ''} title="Move up">▲</button>
+            <button class="reorder-btn" onclick="event.stopPropagation(); moveRecording('${courseId}', '${tabId}', ${index}, 'down')" ${displayIndex === totalItems - 1 ? 'disabled' : ''} title="Move down">▼</button>
+        </div>
+    ` : '';
     
     const slidesHtml = item.slideLink 
         ? `<a href="${escapeHtml(item.slideLink)}" target="_blank" class="recording-link recording-link-slides" onclick="event.stopPropagation()">
@@ -347,6 +394,7 @@ function createRecordingItem(item, index, courseId, tabId, isEditing) {
         : '';
 
     div.innerHTML = `
+        ${reorderButtonsHtml}
         <div class="recording-header">
             <input type="checkbox" class="recording-checkbox" ${item.watched ? 'checked' : ''} 
                 onchange="toggleRecordingStatus('${courseId}', '${tabId}', ${index})">
@@ -416,21 +464,75 @@ function renderHomeworkList(course, openLinksIndex = null) {
     
     if (!course.homework) course.homework = [];
     
-    course.homework.forEach((hw, index) => {
-        const item = createHomeworkItem(hw, index, course.id, openLinksIndex === index);
-        container.appendChild(item);
-    });
+    // Add sort controls if there are homework items
+    if (course.homework.length > 0) {
+        const sortOrder = getHomeworkSortOrder(course);
+        const showCompleted = course.showCompletedHomework !== false;
+        const sortControls = createHomeworkSortControls(course.id, sortOrder, showCompleted);
+        container.appendChild(sortControls);
+        
+        // Sort homework
+        const sortedItems = sortHomework(course.homework, sortOrder);
+        
+        let visibleCount = 0;
+        sortedItems.forEach(({ item, originalIndex }, displayIndex) => {
+            // Filter out completed items if showCompleted is false
+            if (!showCompleted && item.completed) return;
+            visibleCount++;
+            const hwItem = createHomeworkItem(item, originalIndex, course.id, openLinksIndex === originalIndex, displayIndex, sortedItems.length, sortOrder);
+            container.appendChild(hwItem);
+        });
+        
+        // Show message if all items are filtered out
+        if (visibleCount === 0 && course.homework.length > 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'hw-empty-msg';
+            emptyMsg.textContent = 'All assignments are done! Enable "Show Done" to see them.';
+            container.appendChild(emptyMsg);
+        }
+    }
+}
+
+/**
+ * Creates sort controls for homework list.
+ * @param {string} courseId - Course ID
+ * @param {string} currentOrder - Current sort order
+ * @param {boolean} showCompleted - Whether to show completed items
+ * @returns {HTMLElement} Sort controls element
+ */
+function createHomeworkSortControls(courseId, currentOrder, showCompleted) {
+    const div = document.createElement('div');
+    div.className = 'list-sort-controls';
+    div.innerHTML = `
+        <span class="sort-label">Sort:</span>
+        <select class="sort-select" onchange="setHomeworkSortOrder('${courseId}', this.value)">
+            <option value="${SORT_ORDERS.homework.DATE_ASC}" ${currentOrder === SORT_ORDERS.homework.DATE_ASC ? 'selected' : ''}>Date (Earliest)</option>
+            <option value="${SORT_ORDERS.homework.DATE_DESC}" ${currentOrder === SORT_ORDERS.homework.DATE_DESC ? 'selected' : ''}>Date (Latest)</option>
+            <option value="${SORT_ORDERS.homework.INCOMPLETE_FIRST}" ${currentOrder === SORT_ORDERS.homework.INCOMPLETE_FIRST ? 'selected' : ''}>Incomplete First</option>
+            <option value="${SORT_ORDERS.homework.COMPLETED_FIRST}" ${currentOrder === SORT_ORDERS.homework.COMPLETED_FIRST ? 'selected' : ''}>Completed First</option>
+            <option value="${SORT_ORDERS.homework.NAME_ASC}" ${currentOrder === SORT_ORDERS.homework.NAME_ASC ? 'selected' : ''}>Name (A-Z)</option>
+            <option value="${SORT_ORDERS.homework.MANUAL}" ${currentOrder === SORT_ORDERS.homework.MANUAL ? 'selected' : ''}>Manual</option>
+        </select>
+        <label class="recordings-show-watched-toggle" style="margin-top: 0;">
+            <input type="checkbox" id="show-completed-hw-toggle" ${showCompleted ? 'checked' : ''} onchange="toggleShowCompletedHomework('${courseId}')">
+            <span>Show Done</span>
+        </label>
+    `;
+    return div;
 }
 
 /**
  * Creates a homework list item element.
  * @param {Object} hw - Homework object
- * @param {number} index - Item index
+ * @param {number} index - Item index (original index in array)
  * @param {string} courseId - Course ID
  * @param {boolean} isOpen - Whether edit section is open
+ * @param {number} displayIndex - Display position in sorted list
+ * @param {number} totalItems - Total number of items
+ * @param {string} sortOrder - Current sort order
  * @returns {HTMLElement} Homework item element
  */
-function createHomeworkItem(hw, index, courseId, isOpen) {
+function createHomeworkItem(hw, index, courseId, isOpen, displayIndex = 0, totalItems = 1, sortOrder = 'manual') {
     const item = document.createElement('li');
     item.className = `homework-item ${hw.completed ? 'completed' : ''}`;
     
@@ -438,8 +540,18 @@ function createHomeworkItem(hw, index, courseId, isOpen) {
     const linksDisplayHtml = buildLinksDisplay(links);
     const linksEditHtml = buildLinksEdit(links, index, courseId);
     
+    // Show reorder buttons only in manual mode
+    const isManualSort = sortOrder === SORT_ORDERS.homework.MANUAL;
+    const reorderButtonsHtml = isManualSort ? `
+        <div class="item-reorder-buttons hw-reorder-buttons">
+            <button class="reorder-btn" onclick="event.stopPropagation(); moveHomework('${courseId}', ${index}, 'up')" ${displayIndex === 0 ? 'disabled' : ''} title="Move up">▲</button>
+            <button class="reorder-btn" onclick="event.stopPropagation(); moveHomework('${courseId}', ${index}, 'down')" ${displayIndex === totalItems - 1 ? 'disabled' : ''} title="Move down">▼</button>
+        </div>
+    ` : '';
+    
     item.innerHTML = `
-        <div class="hw-header">
+        <div class="hw-main-row">
+            ${reorderButtonsHtml}
             <input type="checkbox" class="hw-checkbox" ${hw.completed ? 'checked' : ''} onchange="toggleHomeworkStatus('${courseId}', ${index})">
             <div class="hw-title-row">
                 <span class="hw-title">${escapeHtml(hw.title)}</span>
