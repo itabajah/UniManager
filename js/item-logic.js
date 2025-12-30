@@ -199,19 +199,31 @@ function toggleRecordingStatus(courseId, tabId, index) {
  * @param {string} tabId - Tab ID
  * @param {number} index - Recording index
  */
-function deleteRecording(courseId, tabId, index) {
-    if (!confirm('Delete this recording?')) return;
-    
+async function deleteRecording(courseId, tabId, index) {
     const course = getCourse(courseId);
     if (!course) return;
     
     const tab = getRecordingTab(course, tabId);
-    if (!tab) return;
+    if (!tab?.items[index]) return;
+    
+    const recordingName = tab.items[index].name || 'this recording';
+    
+    const confirmed = await showConfirmDialog(
+        `Delete "${recordingName}"?`,
+        {
+            title: 'Delete Recording',
+            confirmText: 'Delete',
+            dangerous: true
+        }
+    );
+    
+    if (!confirmed) return;
     
     tab.items.splice(index, 1);
     saveData();
     renderRecordingsTabs(course);
     renderRecordingsList(course);
+    ToastManager.success('Recording deleted');
 }
 
 /**
@@ -285,11 +297,20 @@ function cancelRecordingEdit(courseId) {
 /**
  * Adds a new custom recordings tab.
  */
-function addRecordingsTab() {
+async function addRecordingsTab() {
     if (!editingCourseId) return;
     
-    const name = prompt('Enter tab name:', 'Custom');
-    if (!name?.trim()) return;
+    const name = await showPromptDialog('Enter tab name:', 'Custom', {
+        title: 'Add Tab',
+        placeholder: 'Tab name',
+        required: true,
+        validate: (value) => {
+            const result = validateString(value, { required: true, maxLength: 50 });
+            return result.valid ? true : result.error;
+        }
+    });
+    
+    if (!name) return;
     
     const course = getCourse(editingCourseId);
     if (!course) return;
@@ -305,6 +326,7 @@ function addRecordingsTab() {
     saveData();
     renderRecordingsTabs(course);
     renderRecordingsList(course);
+    ToastManager.success(`Tab "${name.trim()}" created`);
     
     const deleteBtn = $('delete-tab-btn');
     if (deleteBtn) deleteBtn.style.display = 'inline-block';
@@ -313,7 +335,7 @@ function addRecordingsTab() {
 /**
  * Renames the current recordings tab.
  */
-function renameRecordingsTab() {
+async function renameRecordingsTab() {
     if (!editingCourseId) return;
     
     const course = getCourse(editingCourseId);
@@ -322,22 +344,35 @@ function renameRecordingsTab() {
     const tab = getRecordingTab(course, window.currentRecordingsTab);
     if (!tab) return;
     
-    const newName = prompt('Rename tab:', tab.name);
-    if (!newName?.trim()) return;
+    const newName = await showPromptDialog('Rename tab:', tab.name, {
+        title: 'Rename Tab',
+        placeholder: 'Tab name',
+        required: true,
+        validate: (value) => {
+            const result = validateString(value, { required: true, maxLength: 50 });
+            return result.valid ? true : result.error;
+        }
+    });
+    
+    if (!newName) return;
     
     tab.name = newName.trim();
     saveData();
     renderRecordingsTabs(course);
+    ToastManager.success(`Tab renamed to "${newName.trim()}"`);
 }
 
 /**
  * Deletes the current recordings tab (custom tabs only).
  */
-function deleteRecordingsTab() {
+async function deleteRecordingsTab() {
     if (!editingCourseId) return;
     
     if (window.currentRecordingsTab === 'lectures' || window.currentRecordingsTab === 'tutorials') {
-        alert('Cannot delete default tabs.');
+        await showAlertDialog('Cannot delete default tabs.', {
+            title: 'Cannot Delete',
+            type: 'warning'
+        });
         return;
     }
     
@@ -347,9 +382,19 @@ function deleteRecordingsTab() {
     const tab = getRecordingTab(course, window.currentRecordingsTab);
     if (!tab) return;
     
+    let confirmed = true;
     if (tab.items.length > 0) {
-        if (!confirm(`Delete "${tab.name}" tab and all ${tab.items.length} recordings in it?`)) return;
+        confirmed = await showConfirmDialog(
+            `Delete "${tab.name}" tab and all ${tab.items.length} recordings in it?`,
+            {
+                title: 'Delete Tab',
+                confirmText: 'Delete',
+                dangerous: true
+            }
+        );
     }
+    
+    if (!confirmed) return;
     
     course.recordings.tabs = course.recordings.tabs.filter(t => t.id !== window.currentRecordingsTab);
     window.currentRecordingsTab = 'lectures';
@@ -358,6 +403,7 @@ function deleteRecordingsTab() {
     renderRecordingsTabs(course);
     renderRecordingsList(course);
     renderCourses(); // Update course card progress
+    ToastManager.success(`Tab "${tab.name}" deleted`);
     
     const deleteBtn = $('delete-tab-btn');
     if (deleteBtn) deleteBtn.style.display = 'none';
@@ -366,7 +412,7 @@ function deleteRecordingsTab() {
 /**
  * Clears all recordings from the current tab.
  */
-function clearRecordingsTab() {
+async function clearRecordingsTab() {
     if (!editingCourseId) return;
     
     const course = getCourse(editingCourseId);
@@ -376,16 +422,27 @@ function clearRecordingsTab() {
     if (!tab) return;
     
     if (tab.items.length === 0) {
-        alert('This tab is already empty.');
+        ToastManager.info('This tab is already empty');
         return;
     }
     
-    if (!confirm(`Clear all ${tab.items.length} recordings from "${tab.name}"?`)) return;
+    const confirmed = await showConfirmDialog(
+        `Clear all ${tab.items.length} recordings from "${tab.name}"?`,
+        {
+            title: 'Clear Tab',
+            description: 'This will remove all recordings from this tab. This action cannot be undone.',
+            confirmText: 'Clear All',
+            dangerous: true
+        }
+    );
+    
+    if (!confirmed) return;
     
     tab.items = [];
     saveData();
     renderRecordingsList(course);
     renderCourses(); // Update course card progress
+    ToastManager.success(`Cleared all recordings from "${tab.name}"`);
 }
 
 // ============================================================================
@@ -449,11 +506,22 @@ function toggleHomeworkStatus(courseId, hwIndex) {
  * @param {string} courseId - Course ID
  * @param {number} hwIndex - Homework index
  */
-function deleteHomework(courseId, hwIndex) {
-    if (!confirm('Delete this assignment?')) return;
-    
+async function deleteHomework(courseId, hwIndex) {
     const course = getCourse(courseId);
-    if (!course) return;
+    if (!course?.homework?.[hwIndex]) return;
+    
+    const hwTitle = course.homework[hwIndex].title || 'this assignment';
+    
+    const confirmed = await showConfirmDialog(
+        `Delete "${hwTitle}"?`,
+        {
+            title: 'Delete Assignment',
+            confirmText: 'Delete',
+            dangerous: true
+        }
+    );
+    
+    if (!confirmed) return;
     
     course.homework.splice(hwIndex, 1);
     saveData();
@@ -461,6 +529,7 @@ function deleteHomework(courseId, hwIndex) {
     renderHomeworkSidebar();
     renderCalendar();
     renderCourses(); // Update course card progress
+    ToastManager.success('Assignment deleted');
 }
 
 /**

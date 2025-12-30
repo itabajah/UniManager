@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+  
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+  
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Validate HTML
+        uses: nicholascross/check-html@v1
+        with:
+          path: '.'
+          pattern: '*.html'
+      
+      - name: Check for console.log statements
+        run: |
+          # Allow console.error and console.warn, flag console.log
+          if grep -r "console\.log" --include="*.js" js/ | grep -v "console.log.*="; then
+            echo "Warning: Found console.log statements. Consider removing for production."
+          fi
+      
+      - name: Check for TODO/FIXME comments
+        run: |
+          if grep -rn "TODO\|FIXME" --include="*.js" --include="*.css" --include="*.html" .; then
+            echo "Note: Found TODO/FIXME comments in codebase."
+          fi
+
+  security:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run security audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: Check for sensitive data
+        run: |
+          # Check for potential API keys or secrets
+          if grep -rE "(api[_-]?key|secret|password|token)\s*[:=]\s*['\"][^'\"]+['\"]" --include="*.js" js/ | grep -v "example\|config\.example\|placeholder"; then
+            echo "Warning: Potential sensitive data found in source files."
+            exit 1
+          fi
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [lint, test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to GitHub Pages Preview
+        run: echo "Preview deployment would go here for PR #${{ github.event.number }}"

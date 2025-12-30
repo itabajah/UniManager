@@ -520,7 +520,10 @@ function saveData() {
     } catch (error) {
         console.error('Failed to save data:', error);
         if (error.name === 'QuotaExceededError') {
-            alert('Storage quota exceeded. Please export your data and clear some old profiles.');
+            // Use toast notification if available, otherwise silent fail
+            if (typeof ToastManager !== 'undefined') {
+                ToastManager.error('Storage quota exceeded. Please export your data and clear some old profiles.', { duration: 10000 });
+            }
         }
     }
 }

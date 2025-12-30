@@ -11,18 +11,29 @@
  * Saves or updates a course from the course modal.
  */
 function saveCourse() {
-    const name = $('course-name').value.trim();
-    if (!name) return;
+    const nameInput = $('course-name');
+    const nameValidation = validateCourseName(nameInput.value);
+    
+    if (!nameValidation.valid) {
+        ToastManager.error(nameValidation.error);
+        nameInput.focus();
+        return;
+    }
 
     const semester = getCurrentSemester();
-    if (!semester) return;
+    if (!semester) {
+        ToastManager.error('No semester selected');
+        return;
+    }
 
-    const courseData = buildCourseData(name);
+    const courseData = buildCourseData(nameValidation.value);
 
     if (editingCourseId) {
         updateExistingCourse(semester, courseData);
+        ToastManager.success('Course updated');
     } else {
         createNewCourse(semester, courseData);
+        ToastManager.success(`Course "${nameValidation.value}" created`);
     }
 
     saveData();
@@ -107,17 +118,33 @@ function createDefaultRecordings() {
 /**
  * Deletes the currently editing course after confirmation.
  */
-function deleteCourse() {
-    if (!editingCourseId || !confirm('Are you sure you want to delete this course?')) return;
+async function deleteCourse() {
+    if (!editingCourseId) return;
     
     const semester = getCurrentSemester();
     if (!semester) return;
+    
+    const course = semester.courses.find(c => c.id === editingCourseId);
+    const courseName = course?.name || 'this course';
+    
+    const confirmed = await showConfirmDialog(
+        `Delete "${courseName}"?`,
+        {
+            title: 'Delete Course',
+            description: 'This will permanently delete this course and all its recordings, homework, and schedule. This action cannot be undone.',
+            confirmText: 'Delete',
+            dangerous: true
+        }
+    );
+    
+    if (!confirmed) return;
     
     semester.courses = semester.courses.filter(c => c.id !== editingCourseId);
     
     saveData();
     renderAll();
     closeModal('course-modal');
+    ToastManager.success(`Course "${courseName}" deleted`);
 }
 
 /**

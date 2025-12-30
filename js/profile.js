@@ -13,15 +13,19 @@
  * Creates a new profile.
  */
 async function createProfile() {
-    const name = prompt('Enter new profile name:', 'New Profile');
-    if (!name?.trim()) return;
+    const name = await showPromptDialog('Enter new profile name:', 'New Profile', {
+        title: 'Create Profile',
+        placeholder: 'Profile name',
+        required: true,
+        validate: (value) => {
+            const result = validateProfileName(value, profiles);
+            return result.valid ? true : result.error;
+        }
+    });
+    
+    if (!name) return;
     
     const trimmedName = name.trim();
-    
-    if (profiles.some(p => p.name === trimmedName)) {
-        alert(`A profile named "${trimmedName}" already exists. Please choose a different name.`);
-        return;
-    }
     
     const newId = generateId();
     profiles.push({ id: newId, name: trimmedName });
@@ -40,6 +44,7 @@ async function createProfile() {
     }
 
     switchProfile(newId);
+    ToastManager.success(`Profile "${trimmedName}" created`);
 
     // Persist creation promptly so it appears on other devices.
     try {
@@ -48,6 +53,7 @@ async function createProfile() {
         }
     } catch (err) {
         console.error('[Profile] Failed to sync new profile to cloud:', err);
+        ToastManager.warning('Profile created locally. Cloud sync failed.');
     }
 }
 
@@ -78,20 +84,26 @@ async function renameProfile() {
     const profile = profiles.find(p => p.id === activeProfileId);
     if (!profile) return;
     
-    const newName = prompt('Rename profile:', profile.name);
-    if (!newName?.trim()) return;
+    const newName = await showPromptDialog('Rename profile:', profile.name, {
+        title: 'Rename Profile',
+        placeholder: 'Profile name',
+        required: true,
+        validate: (value) => {
+            if (value.trim() === profile.name) return true; // Same name is OK
+            const result = validateProfileName(value, profiles, activeProfileId);
+            return result.valid ? true : result.error;
+        }
+    });
+    
+    if (!newName) return;
     
     const trimmedName = newName.trim();
     if (trimmedName === profile.name) return;
     
-    if (profiles.some(p => p.id !== activeProfileId && p.name === trimmedName)) {
-        alert(`A profile named "${trimmedName}" already exists. Please choose a different name.`);
-        return;
-    }
-    
     profile.name = trimmedName;
     localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
     renderProfileUI();
+    ToastManager.success(`Profile renamed to "${trimmedName}"`);
 
     // Treat rename as a meaningful change: bump lastModified so the rename wins merges.
     try {
@@ -122,9 +134,21 @@ async function renameProfile() {
  * Deletes the current profile.
  */
 async function deleteProfile() {
-    if (!confirm('Are you sure? This will delete the CURRENT profile and all its data.')) {
-        return;
-    }
+    const profile = profiles.find(p => p.id === activeProfileId);
+    const profileName = profile?.name || 'this profile';
+    
+    const confirmed = await showConfirmDialog(
+        `Are you sure you want to delete "${profileName}"?`,
+        {
+            title: 'Delete Profile',
+            description: 'This will permanently delete this profile and all its data. This action cannot be undone.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            dangerous: true
+        }
+    );
+    
+    if (!confirmed) return;
 
     const idToDelete = activeProfileId;
 
@@ -145,6 +169,8 @@ async function deleteProfile() {
         localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
         localStorage.removeItem(STORAGE_KEYS.DATA_PREFIX + idToDelete);
     }
+    
+    ToastManager.success(`Profile "${profileName}" deleted`);
     
     // If signed in, push the updated profile list to Firebase BEFORE reload.
     // Otherwise, the cloud merge on page load can re-add the deleted profile.
@@ -217,9 +243,19 @@ function importProfile(file) {
                 profileName = importedJson.meta.profileName || 'Imported Profile';
             }
 
-            // Validate data structure
-            if (!dataToImport.semesters || !Array.isArray(dataToImport.semesters)) {
-                throw new Error('Invalid data format: Missing semesters array.');
+            // Validate data structure using the new validation system
+            const validation = validateImportedData(dataToImport);
+            if (!validation.valid) {
+                await showAlertDialog(validation.error, {
+                    title: 'Import Failed',
+                    type: 'error'
+                });
+                return;
+            }
+            
+            // Show warnings if any
+            if (validation.warnings.length > 0) {
+                console.warn('[Import] Warnings:', validation.warnings);
             }
 
             // Create new profile with unique name
@@ -235,7 +271,11 @@ function importProfile(file) {
             
             // Switch to imported profile
             switchProfile(newId);
-            alert(`Imported as new profile: "${newName}"`);
+            ToastManager.success(`Imported as "${newName}"`, {
+                description: validation.warnings.length > 0 
+                    ? `${validation.warnings.length} warning(s) - check console`
+                    : undefined
+            });
             closeModal('settings-modal');
 
             // Persist import promptly so it appears on other devices.
@@ -248,12 +288,19 @@ function importProfile(file) {
             }
 
         } catch (err) {
-            alert('Error importing data: ' + err.message);
+            console.error('[Import] Error:', err);
+            await showAlertDialog('Error importing data: ' + err.message, {
+                title: 'Import Failed',
+                type: 'error'
+            });
         }
     };
     
     reader.onerror = () => {
-        alert('Error reading file.');
+        showAlertDialog('Error reading file. Please try again.', {
+            title: 'Import Failed',
+            type: 'error'
+        });
     };
     
     reader.readAsText(file);

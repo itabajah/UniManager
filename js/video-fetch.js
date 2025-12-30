@@ -1,36 +1,161 @@
 /**
  * @fileoverview Video fetching from external sources (YouTube, Panopto).
- * Handles importing videos from playlists and folders.
+ * Handles importing videos from playlists and folders with robust error handling.
  */
 
 'use strict';
 
 // ============================================================================
-// CORS PROXY
+// CORS PROXY WITH RETRY LOGIC
 // ============================================================================
 
 /**
- * Fetches a URL through CORS proxies with fallback.
- * @param {string} url - URL to fetch
- * @returns {Promise<Response>} Fetch response
- * @throws {Error} If all proxies fail
+ * Configuration for fetch retry behavior.
+ * @const {Object}
  */
-async function fetchWithCorsProxy(url) {
-    let lastError = null;
+const FETCH_CONFIG = Object.freeze({
+    /** Maximum number of retry attempts per proxy */
+    MAX_RETRIES_PER_PROXY: 2,
+    /** Initial delay between retries (ms) */
+    INITIAL_RETRY_DELAY: 500,
+    /** Maximum delay between retries (ms) */
+    MAX_RETRY_DELAY: 5000,
+    /** Backoff multiplier for exponential backoff */
+    BACKOFF_MULTIPLIER: 2,
+    /** Timeout for each fetch attempt (ms) */
+    FETCH_TIMEOUT: 15000
+});
+
+/**
+ * Creates an AbortController with timeout.
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {{controller: AbortController, timeoutId: number}}
+ */
+function createTimeoutController(timeout) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    return { controller, timeoutId };
+}
+
+/**
+ * Waits for a specified duration with optional exponential backoff.
+ * @param {number} attempt - Current attempt number (0-based)
+ * @param {number} baseDelay - Base delay in milliseconds
+ * @param {number} maxDelay - Maximum delay cap in milliseconds
+ * @returns {Promise<void>}
+ */
+function waitWithBackoff(attempt, baseDelay = FETCH_CONFIG.INITIAL_RETRY_DELAY, maxDelay = FETCH_CONFIG.MAX_RETRY_DELAY) {
+    const delay = Math.min(baseDelay * Math.pow(FETCH_CONFIG.BACKOFF_MULTIPLIER, attempt), maxDelay);
+    // Add jitter to prevent thundering herd
+    const jitter = delay * 0.2 * Math.random();
+    return new Promise(resolve => setTimeout(resolve, delay + jitter));
+}
+
+/**
+ * Attempts a single fetch with timeout.
+ * @param {string} url - URL to fetch
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Response>} Fetch response
+ * @throws {Error} If fetch fails or times out
+ */
+async function fetchWithTimeout(url, timeout = FETCH_CONFIG.FETCH_TIMEOUT) {
+    const { controller, timeoutId } = createTimeoutController(timeout);
     
-    for (const makeProxyUrl of CORS_PROXIES) {
-        try {
-            const proxyUrl = makeProxyUrl(url);
-            const response = await fetch(proxyUrl);
-            if (response.ok) {
-                return response;
+    try {
+        const response = await fetch(url, { 
+            signal: controller.signal,
+            headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
             }
-        } catch (e) {
-            lastError = e;
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timed out');
+        }
+        throw error;
+    }
+}
+
+/**
+ * Fetches a URL through CORS proxies with fallback and retry logic.
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @param {Function} onProgress - Progress callback (proxyIndex, totalProxies, status)
+ * @returns {Promise<Response>} Fetch response
+ * @throws {Error} If all proxies and retries fail
+ */
+async function fetchWithCorsProxy(url, options = {}, onProgress = null) {
+    const { 
+        maxRetriesPerProxy = FETCH_CONFIG.MAX_RETRIES_PER_PROXY,
+        timeout = FETCH_CONFIG.FETCH_TIMEOUT 
+    } = options;
+    
+    const errors = [];
+    const totalProxies = CORS_PROXIES.length;
+    
+    for (let proxyIndex = 0; proxyIndex < totalProxies; proxyIndex++) {
+        const makeProxyUrl = CORS_PROXIES[proxyIndex];
+        const proxyUrl = makeProxyUrl(url);
+        
+        for (let retry = 0; retry < maxRetriesPerProxy; retry++) {
+            try {
+                // Report progress
+                if (onProgress) {
+                    onProgress(proxyIndex + 1, totalProxies, retry === 0 ? 'trying' : 'retrying');
+                }
+                
+                // Wait before retry (not on first attempt)
+                if (retry > 0) {
+                    await waitWithBackoff(retry - 1);
+                }
+                
+                const response = await fetchWithTimeout(proxyUrl, timeout);
+                
+                if (response.ok) {
+                    return response;
+                }
+                
+                // Handle specific HTTP errors
+                if (response.status === 429) {
+                    // Rate limited - wait longer before retry
+                    await waitWithBackoff(retry, 2000);
+                    errors.push(`Proxy ${proxyIndex + 1}: Rate limited (429)`);
+                    continue;
+                }
+                
+                if (response.status >= 500) {
+                    // Server error - retry
+                    errors.push(`Proxy ${proxyIndex + 1}: Server error (${response.status})`);
+                    continue;
+                }
+                
+                // Client errors (4xx except 429) - don't retry on this proxy
+                errors.push(`Proxy ${proxyIndex + 1}: HTTP ${response.status}`);
+                break;
+                
+            } catch (error) {
+                const errorMessage = error.message || 'Unknown error';
+                errors.push(`Proxy ${proxyIndex + 1}, attempt ${retry + 1}: ${errorMessage}`);
+                
+                // If it's a network error, try next proxy instead of retrying
+                if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+                    break;
+                }
+            }
         }
     }
     
-    throw lastError || new Error('All CORS proxies failed');
+    // All proxies failed
+    const errorSummary = errors.length > 0 
+        ? `Tried ${totalProxies} proxies. Last errors: ${errors.slice(-3).join('; ')}`
+        : 'All CORS proxies failed';
+    
+    const finalError = new Error(errorSummary);
+    finalError.details = errors;
+    throw finalError;
 }
 
 // ============================================================================
@@ -48,18 +173,29 @@ async function fetchVideosFromSource() {
     
     const source = sourceSelect?.value;
     
-    showFetchStatus(statusDiv, 'Processing...');
+    showFetchStatus(statusDiv, 'Processing...', false, true);
     
     try {
         let videos = [];
         
         if (source === 'youtube') {
             const url = urlInput?.value?.trim();
+            
+            // Validate URL
+            const urlValidation = validateVideoUrl(url);
             if (!url) {
                 showFetchStatus(statusDiv, 'Please enter a YouTube playlist URL.', true);
                 return;
             }
-            videos = await fetchYouTubePlaylist(url);
+            
+            if (!urlValidation.valid) {
+                showFetchStatus(statusDiv, urlValidation.error || 'Invalid URL.', true);
+                return;
+            }
+            
+            videos = await fetchYouTubePlaylist(url, (proxyNum, total, status) => {
+                showFetchStatus(statusDiv, `${status === 'retrying' ? 'Retrying' : 'Trying'} proxy ${proxyNum}/${total}...`, false, true);
+            });
         } else if (source === 'panopto') {
             // Use extracted videos from the browser/paste flow
             const extractedVideos = window.panoptoExtractedVideos || [];
@@ -71,7 +207,7 @@ async function fetchVideosFromSource() {
             }
             
             videos = selectedVideos.map(v => ({
-                title: v.title,
+                title: sanitizeString(v.title),
                 url: v.url
             }));
         }
@@ -83,6 +219,7 @@ async function fetchVideosFromSource() {
         addFetchedVideos(videos, useOriginalNames);
         
         showFetchStatus(statusDiv, `Success! Added ${videos.length} videos.`, false);
+        ToastManager.success(`Added ${videos.length} videos`);
         
         setTimeout(() => {
             closeModal('fetch-videos-modal');
@@ -94,7 +231,9 @@ async function fetchVideosFromSource() {
         
     } catch (err) {
         console.error('Fetch videos error:', err);
-        showFetchStatus(statusDiv, 'Error: ' + err.message, true);
+        const errorMessage = err.message || 'An unknown error occurred';
+        showFetchStatus(statusDiv, 'Error: ' + errorMessage, true);
+        ToastManager.error('Failed to fetch videos: ' + errorMessage);
     }
 }
 
@@ -103,10 +242,11 @@ async function fetchVideosFromSource() {
  * @param {HTMLElement} statusDiv - Status element
  * @param {string} message - Message to show
  * @param {boolean} isError - Whether this is an error
+ * @param {boolean} isLoading - Whether to show loading state
  */
-function showFetchStatus(statusDiv, message, isError = false) {
+function showFetchStatus(statusDiv, message, isError = false, isLoading = false) {
     if (!statusDiv) return;
-    statusDiv.textContent = message;
+    statusDiv.textContent = isLoading ? '⏳ ' + message : message;
     statusDiv.style.color = isError ? 'var(--error-border)' : 'var(--text-tertiary)';
 }
 
@@ -151,9 +291,10 @@ function addFetchedVideos(videos, useOriginalNames) {
 /**
  * Fetches videos from a YouTube playlist.
  * @param {string} url - YouTube playlist URL
+ * @param {Function} onProgress - Progress callback for proxy status
  * @returns {Promise<Array<{title: string, url: string}>>} Array of video objects
  */
-async function fetchYouTubePlaylist(url) {
+async function fetchYouTubePlaylist(url, onProgress = null) {
     const playlistId = extractYouTubePlaylistId(url);
     if (!playlistId) {
         throw new Error('Could not extract playlist ID from URL. Make sure it\'s a YouTube playlist URL.');
@@ -162,7 +303,7 @@ async function fetchYouTubePlaylist(url) {
     const playlistUrl = `https://www.youtube.com/playlist?list=${playlistId}`;
     
     try {
-        const response = await fetchWithCorsProxy(playlistUrl);
+        const response = await fetchWithCorsProxy(playlistUrl, {}, onProgress);
         const html = await response.text();
         
         // Try parsing structured data first
@@ -173,10 +314,22 @@ async function fetchYouTubePlaylist(url) {
             videos = extractYouTubeVideoLinks(html);
         }
         
+        // Sanitize video titles
+        videos = videos.map(v => ({
+            title: sanitizeString(v.title),
+            url: v.url
+        }));
+        
         return videos;
         
     } catch (e) {
         console.error('YouTube fetch error:', e);
+        
+        // Provide more helpful error messages
+        if (e.message.includes('proxy') || e.message.includes('Proxy')) {
+            throw new Error('Failed to connect to YouTube. All proxy servers are unavailable. Please try again later.');
+        }
+        
         throw new Error('Failed to fetch YouTube playlist. The playlist may be private or the URL is incorrect.');
     }
 }

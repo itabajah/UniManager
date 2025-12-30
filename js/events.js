@@ -56,24 +56,34 @@ function setupSemesterEvents() {
 /**
  * Saves a new semester from the add semester modal.
  */
-function saveSemester() {
+async function saveSemester() {
     const select = $('new-semester-select');
     let name = select.options[select.selectedIndex].text;
     
     if (select.value === 'custom') {
-        name = $('new-semester-custom').value;
+        name = $('new-semester-custom').value.trim();
     }
 
-    if (!name) return;
+    // Validate semester name
+    const validation = validateString(name, {
+        required: true,
+        maxLength: VALIDATION_LIMITS.SEMESTER_NAME_MAX,
+        minLength: 1
+    });
     
-    if (appData.semesters.some(s => s.name === name)) {
-        alert('Semester already exists!');
+    if (!validation.valid) {
+        ToastManager.error(validation.error);
+        return;
+    }
+    
+    if (appData.semesters.some(s => s.name.toLowerCase() === validation.value.toLowerCase())) {
+        ToastManager.error('Semester already exists');
         return;
     }
 
     const newSem = {
         id: generateId(),
-        name,
+        name: validation.value,
         courses: [],
         calendarSettings: { ...DEFAULT_CALENDAR_SETTINGS }
     };
@@ -83,18 +93,29 @@ function saveSemester() {
     renderAll();
     closeModal('add-semester-modal');
     $('new-semester-custom').value = '';
+    ToastManager.success(`Semester "${validation.value}" created`);
 }
 
 /**
  * Deletes the current semester after confirmation.
  */
-function deleteSemester() {
+async function deleteSemester() {
     if (!currentSemesterId) return;
     
     const semester = appData.semesters.find(s => s.id === currentSemesterId);
     if (!semester) return;
 
-    if (!confirm(`Are you sure you want to delete "${semester.name}" and all its courses?`)) return;
+    const confirmed = await showConfirmDialog(
+        `Delete "${semester.name}"?`,
+        {
+            title: 'Delete Semester',
+            description: `This will permanently delete this semester and all ${semester.courses?.length || 0} courses in it. This action cannot be undone.`,
+            confirmText: 'Delete',
+            dangerous: true
+        }
+    );
+    
+    if (!confirmed) return;
 
     appData.semesters = appData.semesters.filter(s => s.id !== currentSemesterId);
     
@@ -105,6 +126,7 @@ function deleteSemester() {
     
     saveData();
     renderAll();
+    ToastManager.success(`Semester "${semester.name}" deleted`);
 }
 
 // ============================================================================
@@ -722,18 +744,26 @@ function cancelThemeChanges() {
  * Updates calendar settings from the settings modal.
  */
 function updateCalendarSettings() {
-    const start = parseInt($('cal-start-hour').value);
-    const end = parseInt($('cal-end-hour').value);
+    const startResult = validateCalendarHour($('cal-start-hour').value);
+    const endResult = validateCalendarHour($('cal-end-hour').value);
+    
+    if (!startResult.valid || !endResult.valid) {
+        ToastManager.error('Please enter valid hours (0-23)');
+        return;
+    }
+    
+    const start = startResult.value;
+    const end = endResult.value;
     const days = [...document.querySelectorAll('#cal-days-container input:checked')]
         .map(cb => parseInt(cb.value));
     
     if (days.length === 0) {
-        alert('Please select at least one visible day.');
+        ToastManager.error('Please select at least one visible day');
         return;
     }
     
     if (start >= end) {
-        alert('Start time must be before end time');
+        ToastManager.error('Start time must be before end time');
         return;
     }
     
@@ -745,6 +775,7 @@ function updateCalendarSettings() {
             visibleDays: days.sort((a, b) => a - b)
         };
         saveData();
+        ToastManager.success('Calendar settings updated');
     }
     
     renderCalendar();

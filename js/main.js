@@ -11,6 +11,28 @@
  * Initializes the application when DOM is ready.
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // Setup global error handling first
+    if (typeof setupGlobalErrorHandler === 'function') {
+        setupGlobalErrorHandler({ showToast: true, logToConsole: true });
+    }
+    
+    // Setup offline/online detection
+    if (typeof setupOfflineHandling === 'function') {
+        setupOfflineHandling({
+            onOffline: () => {
+                // Optionally disable sync-related UI
+                console.warn('[App] Browser offline');
+            },
+            onOnline: () => {
+                // Trigger sync when back online
+                console.info('[App] Browser online - triggering sync');
+                if (typeof autoSyncToFirebase === 'function') {
+                    autoSyncToFirebase();
+                }
+            }
+        });
+    }
+    
     loadData();
     initTheme();
     setupEventListeners();
@@ -35,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
         }
     }
+    
+    // Show initialization complete
+    console.info('[App] Tollab initialized successfully');
 });
 
 // ============================================================================
